@@ -19,6 +19,10 @@ project/plugins/project/
 # Scala
 *.class
 *.log
-
+# Metals / Bloop (Scala build tools)
+.bloop/
+.metals/
+**/.bloop/
+**/.metals/
 # OS Data
 .DS_Store
