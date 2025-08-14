@@ -29,4 +29,7 @@ object CLI:
       case "status" =>
         s"Turno attuale:"
 
+      case "end-turn" =>
+        s"cambio turno"
+
 
