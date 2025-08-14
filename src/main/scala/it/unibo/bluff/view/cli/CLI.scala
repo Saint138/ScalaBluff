@@ -6,11 +6,21 @@ import it.unibo.bluff.model.state.GameState
 
 object CLI:
 
+  var gameState: Option[GameState] = None
+
+  def execute(input: String): Unit =
+    input.trim.toLowerCase match
+      case "new" =>
+        start(2)
+
   def start(players: Int = 2): Unit =
     val rng  = RNG.default()
     val deck = DeckBuilder.standardShuffled(rng) // DeckBuilder è in it.unibo.bluff.model.Rules.scala
     val st   = GameState.initial(players, deck)
 
+    gameState = Some(st)
+
     println(s"Nuova partita con $players giocatori.")
     println(s"Mazzo iniziale: ${deck.size} carte.")
     println(s"Primo turno al giocatore: ${st.turn}")
+
