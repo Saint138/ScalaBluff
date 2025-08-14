@@ -7,4 +7,10 @@ class CLITest extends AnyFunSuite {
     assert(CLI.gameState.isDefined)
     assert(CLI.gameState.get.players.nonEmpty)
   }
+
+  test("status should show current player turn"){
+    CLI.execute("new")
+    val output = CLI.execute("status")
+    assert(output.contains("Turno attuale:"))
+  }
 }
