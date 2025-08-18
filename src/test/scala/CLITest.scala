@@ -15,13 +15,18 @@ class CLITest extends AnyFunSuite {
     assert(output.contains("Turno attuale:"))
   }
 
+  test("status should show current player ") {
+    val output = CLI.execute("status")
+    assert(output.contains("Nessuna partita in corso"))
+  }
+
   test("end-turn should pass the turn to the next player"){
     CLI.execute("new")
-    val before = CLI.gameState.get.turn
+    val before = CLI.execute("status")
     val output = CLI.execute("end-turn")
-    val after = CLI.gameState.get.turn
+    val after = CLI.execute("status")
     assert(output.contains("Cambio turno"))
-    //assert(before != after)
+    assert(before != after)
 
   }
 }

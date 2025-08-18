@@ -27,9 +27,18 @@ object CLI:
         s"nuova partita"
 
       case "status" =>
-        s"Turno attuale:"
+        gameState match
+          case Some(st) =>  s"Turno attuale:${st.turn}"
+          case None => "Nessuna partita in corso"
 
       case "end-turn" =>
-        s"cambio turno"
+        gameState match
+          case Some(st)=>
+            val next = st.nextPlayer
+            val updated = st.copy(turn = next)
+            gameState = Some(updated)
+          case None => "Nessuna partita in corso"
+
+        s"Cambio turno"
 
 
