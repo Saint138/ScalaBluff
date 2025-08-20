@@ -66,7 +66,7 @@ object GameEngine:
       val (receiver, nextTurn) =
         if truthful then (cmd.player, decl.player)      // accusa fallita
         else (decl.player, cmd.player)                  // bluff riuscito
-      val receiverHand = state.hands.getOrElse(receiver, Hand(Nil)).add(pileCards)
+      val receiverHand = state.hands.getOrElse(receiver, Hand(Nil)).addAll(pileCards)
       val newHands = state.hands.updated(receiver, receiverHand)
       val clearedPile = state.pile.clear._2
       val st2 = state.copy(

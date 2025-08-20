@@ -10,7 +10,7 @@ object Dealing:
     def loop(current: Int, d: Deck, acc: Map[PlayerId, Hand]): (Map[PlayerId, Hand], Deck) =
       if d.isEmpty then (acc, d)
       else
-        val (card :: Nil, d2) = d.draw(1)
+        val (card :: Nil, d2) = d.draw(1): @unchecked
         val pid = players(current)
         val updatedHand = acc.getOrElse(pid, Hand.empty).add(card)
         loop((current + 1) % players.size, d2, acc.updated(pid, updatedHand))
