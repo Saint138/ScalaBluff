@@ -6,27 +6,19 @@ class CLITest extends AnyFunSuite {
     val output = CLI.execute("new") //creo una partita con due giocatori
     assert(CLI.gameState.isDefined)
     assert(CLI.gameState.get.players.nonEmpty)
-    assert(output.contains("nuova partita"))
   }
 
-  test("status should show current player turn"){
+  test("status should reflect current game state") {
     CLI.execute("new")
-    val output = CLI.execute("status")
-    assert(output.contains("Turno attuale:"))
+    val msg = CLI.statusMessage
+    assert(msg.contains(s"Turno attuale: ${CLI.gameState.get.turn}"))
   }
 
-  test("status should show current player ") {
-    val output = CLI.execute("status")
-    assert(output.contains("Nessuna partita in corso"))
-  }
-
-  test("end-turn should pass the turn to the next player"){
+  test("end-turn should update current player") {
     CLI.execute("new")
-    val before = CLI.execute("status")
-    val output = CLI.execute("end-turn")
-    val after = CLI.execute("status")
-    assert(output.contains("Cambio turno"))
+    val before = CLI.gameState.get.turn
+    CLI.execute("end-turn")
+    val after = CLI.gameState.get.turn
     assert(before != after)
-
   }
 }

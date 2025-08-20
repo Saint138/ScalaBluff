@@ -19,26 +19,34 @@ object CLI:
     println(s"Mazzo iniziale: ${deck.size} carte.")
     println(s"Primo turno al giocatore: ${st.turn}")
 
+  private def endTurn(): Unit =
+    gameState match
+      case Some(st) =>
+        val next = st.nextPlayer
+        val updated = st.copy(turn = next)
+        gameState = Some(updated)
+        println(s"Cambio turno: ora tocca al giocatore $next")
+      case None =>
+        println("Nessuna partita in corso")
 
-  def execute(input: String): String =
+  def statusMessage: String =
+    gameState match
+      case Some(st) => s"Turno attuale: ${st.turn}"
+      case None => "Nessuna partita in corso"
+
+
+  def execute(input: String): Unit =
     input.trim.toLowerCase match
       case "new" =>
         start(2)
-        s"nuova partita"
 
       case "status" =>
-        gameState match
-          case Some(st) =>  s"Turno attuale:${st.turn}"
-          case None => "Nessuna partita in corso"
+        println(statusMessage)
 
       case "end-turn" =>
-        gameState match
-          case Some(st)=>
-            val next = st.nextPlayer
-            val updated = st.copy(turn = next)
-            gameState = Some(updated)
-          case None => "Nessuna partita in corso"
+       endTurn()
 
-        s"Cambio turno"
+      case other =>
+        println(s"Comando sconosciuto: $other")
 
 
