@@ -1,30 +1,23 @@
 package it.unibo.bluff.model
 
-trait Dealing {
-  def deal(deck: Deck, players: Int, cardsPerPlayer: Int): Map[Int, List[Card]]
-}
+/** Utilities for initial distribution of cards to players. */
+object Dealing:
 
-object Dealing {
-  def apply(): Dealing = new DealingImpl
+  /** Distribute all cards round-robin. Returns (hands map, leftover deck). */
+  def dealAll(players: List[PlayerId], deck: Deck): (Map[PlayerId, Hand], Deck) =
+    require(players.nonEmpty, "Need at least one player")
+    @annotation.tailrec
+    def loop(current: Int, d: Deck, acc: Map[PlayerId, Hand]): (Map[PlayerId, Hand], Deck) =
+      if d.isEmpty then (acc, d)
+      else
+        val (card :: Nil, d2) = d.draw(1)
+        val pid = players(current)
+        val updatedHand = acc.getOrElse(pid, Hand.empty).add(card)
+        loop((current + 1) % players.size, d2, acc.updated(pid, updatedHand))
+    loop(0, deck, Map.empty)
 
-  private class DealingImpl extends Dealing {
-    def deal(deck: Deck, players: Int, cardsPerPlayer: Int): Map[Int, List[Card]] = {
-      require(players > 0, "Number of players must be positive")
-      require(cardsPerPlayer > 0, "Number of cards per player must be positive")
-      require(deck.size >= players * cardsPerPlayer, "Not enough cards in the deck")
+  /**distribute and return a list aligned with players order. */
+  def dealAllOrdered(players: List[PlayerId], deck: Deck): (List[Hand], Deck) =
+    val (m, d2) = dealAll(players, deck)
+    (players.map(m), d2)
 
-      val (hands, remainingDeck) = dealHands(deck, players, cardsPerPlayer)
-      hands
-    }
-
-    private def dealHands(deck: Deck, players: Int, cardsPerPlayer: Int): (Map[Int, List[Card]], Deck) = {
-      var currentDeck = deck
-      val hands = (1 to players).map { player =>
-        val (cards, newDeck) = currentDeck.draw(cardsPerPlayer)
-        currentDeck = newDeck
-        player -> cards
-      }.toMap
-      (hands, currentDeck)
-    }
-  }
-}
