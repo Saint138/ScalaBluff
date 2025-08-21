@@ -103,7 +103,7 @@ object Engine:
             if truthful then (cmd.player, decl.player)   // accusa fallita → accuser prende il mazzo, tocca al dichiarante
             else (decl.player, cmd.player)               // bluff riuscito → dichiarante prende il mazzo, tocca all'accusatore
 
-          val receiverHand = state.hands.getOrElse(receiver, Hand(Nil)).add(pileCards)
+          val receiverHand = state.hands.getOrElse(receiver, Hand(Nil)).addAll(pileCards)
           val newHands = state.hands.updated(receiver, receiverHand)
           val (_, cleared) = state.pile.clear
 
