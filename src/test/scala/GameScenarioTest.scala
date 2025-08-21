@@ -1,29 +1,65 @@
 import org.scalatest.funsuite.AnyFunSuite
+import it.unibo.bluff.engine.GameEngine   // shim che delega a Engine.step
+import it.unibo.bluff.engine.GameEngine.GameCommand
 import it.unibo.bluff.model.*
-import it.unibo.bluff.engine.*
-import it.unibo.bluff.model.state.GameState
+import it.unibo.bluff.model.state.*
+import it.unibo.bluff.model.util.RNG
+import it.unibo.bluff.model.Rank
 
-class GameScenarioTest extends AnyFunSuite:
-  // Turn order locale (semplice ordine circolare)
-  given TurnOrder with
-    def next(players: Vector[PlayerId], current: PlayerId): PlayerId =
-      val idx = players.indexOf(current)
-      players((idx + 1) % players.size)
+// TurnOrder implicito
+import it.unibo.bluff.model.TurnOrder.given
 
-  test("bluff chiamato correttamente") {
-    // Setup mazzo deterministico (prime 6 carte only)
-    val p0 = PlayerId(0); val p1 = PlayerId(1)
-    val cards = List(
-      Card(Rank.Ace, Suit.Clubs), Card(Rank.Two, Suit.Clubs), Card(Rank.Three, Suit.Clubs),
-      Card(Rank.Four, Suit.Clubs), Card(Rank.Five, Suit.Clubs), Card(Rank.Six, Suit.Clubs)
-    )
-    val state0 = GameState.initial(2, cards)
+final class GameScenarioTest extends AnyFunSuite {
+
+  private def pileSize(st: GameState): Int =
+    st.pile.allCards.size
+
+  test("Scenario: Deal → Play (vero) → CallBluff (vero → accusa fallita, accusatore prende la pila)") {
+    val rng    = RNG.default()
+    val deck   = DeckBuilder.standardShuffled(rng)
+    val state0 = GameState.initial(players = 2, deck)
+
     val (st1, _) = GameEngine.applyCommand(state0, GameCommand.Deal).fold(err => fail(err), identity)
-    // Giocatore 0 gioca 1 carta dichiarando Ace (vera)
-    val hand0First = st1.hands(p0).cards.head
-    val (st2, _) = GameEngine.applyCommand(st1, GameCommand.Play(p0, List(hand0First), Rank.Ace)).fold(err => fail(err), identity)
-    // Giocatore 1 chiama bluff (che fallisce perché dichiarazione vera): penalizzato p1
+
+    val p0 = st1.turn
+    val p1 = st1.players.find(_ != p0).get
+
+    // Gioco carta vera dichiarando il suo rank
+    val c = st1.hands(p0).cards.head
+    val (st2, _) = GameEngine.applyCommand(st1, GameCommand.Play(p0, List(c), c.rank)).fold(err => fail(err), identity)
+
     val (st3, events) = GameEngine.applyCommand(st2, GameCommand.CallBluff(p1)).fold(err => fail(err), identity)
-    assert(st3.hands(p1).cards.size > st2.hands(p1).cards.size)
-    assert(events.exists{ case GameEvent.BluffCalled(_, _, truthful) => truthful; case _ => false })
+
+    assert(pileSize(st3) == 0)
+    assert(events.exists {
+      case GameEngine.GameEvent.BluffCalled(by, _, truthful) => by == p1 && truthful
+      case _ => false
+    })
   }
+
+  test("Scenario: Deal → Play (falso) → CallBluff (vero → pila al dichiarante)") {
+    val rng   = RNG.default()
+    val deck  = DeckBuilder.standardShuffled(rng)
+    val st0   = GameState.initial(players = 2, deck)
+
+    val (st1, _) = GameEngine.applyCommand(st0, GameCommand.Deal).fold(err => fail(err), identity)
+
+    val p0 = st1.turn
+    val p1 = st1.players.find(_ != p0).get
+
+    val nonAce = st1.hands(p0).cards.find(_.rank != Rank.Ace).getOrElse(st1.hands(p0).cards.head)
+    val (st2, _) = GameEngine.applyCommand(st1, GameCommand.Play(p0, List(nonAce), Rank.Ace)).fold(err => fail(err), identity)
+
+    val pileBefore = pileSize(st2)
+    val (st3, evs) = GameEngine.applyCommand(st2, GameCommand.CallBluff(p1)).fold(err => fail(err), identity)
+
+    assert(pileSize(st3) == 0, "La pila deve svuotarsi dopo CallBluff")
+    // in caso di bluff falso: il dichiarante raccoglie la pila
+    assert(st3.hands(p0).size >= st1.hands(p0).size + pileBefore - 1)
+
+    assert(evs.exists {
+      case GameEngine.GameEvent.BluffCalled(by, _, truthful) => by == p1 && !truthful
+      case _ => false
+    })
+  }
+}
