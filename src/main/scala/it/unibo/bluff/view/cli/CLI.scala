@@ -7,13 +7,14 @@ import it.unibo.bluff.model.state.*
 import it.unibo.bluff.model.util.RNG
 import it.unibo.bluff.engine.Engine
 import it.unibo.bluff.engine.Engine.{GameCommand, GameEvent}
-import it.unibo.bluff.model.TurnOrder
 
 object CLI:
 
+  // Stato interno (privato) + accessor pubblico di sola lettura per i test
   private var gameState: Option[GameState] = None
+  def state: Option[GameState] = gameState
+
   private var running = false
-  // Removed invalid 'given' usage; provide TurnOrder instance if needed elsewhere.
 
   def start(players: Int = 2): Unit =
     val rng  = RNG.default()
@@ -23,13 +24,13 @@ object CLI:
     println(s"Nuova partita con $players giocatori.")
     println(s"Mazzo iniziale: ${deck.size} carte.")
     println(s"Primo turno: ${turnString(st)}")
-    println("Comandi: deal | play <rank> [n] | play-any <declRank> <n> | call | hand | pile | status | new | help | quit")
+    println("Comandi: deal | play <rank> [n] | play-any <declRank> <n> | call | hand | pile | status | end-turn | new | help | quit")
 
   def repl(): Unit =
     running = true
     while running do
       print("\n> ")
-      println("Comandi: deal | play <rank> [n] | play-any <declRank> <n> | call | hand | pile | status | new | help | quit")
+      println("Comandi: deal | play <rank> [n] | play-any <declRank> <n> | call | hand | pile | status | end-turn | new | help | quit")
       print("> ")
       val line = Option(StdIn.readLine()).getOrElse("")
       execute(line)
@@ -41,11 +42,11 @@ object CLI:
       case "new" :: _ =>
         start(2)
       case "help" :: _ =>
-        println("Comandi: deal | play <rank> [n] | play-any <declRank> <n> | call | hand | pile | status | new | help | quit")
+        println("Comandi: deal | play <rank> [n] | play-any <declRank> <n> | call | hand | pile | status | end-turn | new | help | quit")
       case ("quit" | "exit") :: _ =>
         running = false
       case "status" :: _ =>
-        println(statusMessage())
+        println(statusMessage)
       case "hand" :: _ =>
         printHand()
       case "pile" :: _ =>
@@ -83,14 +84,11 @@ object CLI:
               else
                 val toPlay = hand.take(n)              // carte QUALSIASI → può essere un bluff
                 step(st, GameCommand.Play(me, toPlay, decl))
-  }
+        }
       case "play" :: _ =>
         println("Uso: play <rank> [n]  es: play ace 2  / play K")
       case other =>
         println(s"Comando sconosciuto: ${other.mkString(" ")}")
-      
-
-
 
   // ----- Helpers -----
 
@@ -106,7 +104,7 @@ object CLI:
       case Right((st2, events)) =>
         gameState = Some(st2)
         events.foreach(printEvent)
-        println(statusMessage())
+        println(statusMessage)
 
   private def printEvent(ev: GameEvent): Unit = ev match
     case GameEvent.Dealt(sizes) =>
@@ -118,7 +116,8 @@ object CLI:
       val esito = if truthful then "VERA" else "FALSA"
       println(s"Event: accusa di bluff da ${by.value} contro ${against.player.value} → dichiarazione $esito")
 
-  private def statusMessage(): String =
+  // resa pubblica per i test (senza parentesi)
+  def statusMessage: String =
     gameState match
       case None => "Nessuna partita in corso."
       case Some(st) =>
