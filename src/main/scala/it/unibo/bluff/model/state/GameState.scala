@@ -25,6 +25,15 @@ final case class GameState(
   finished: Boolean
 ):
   def nextPlayer(using order: TurnOrder): PlayerId = order.next(players, turn)
+  //card distribution 
+  def applyInitialDistribution: GameState =
+    if hands.nonEmpty || deck.isEmpty then this
+    else
+      val (distributed, leftoverDeck) =
+        Dealing.dealAll(players.toList, ListDeck(deck))
+      val remainingCards = leftoverDeck match
+        case ListDeck(cs) => cs
+      this.copy(hands = distributed, deck = remainingCards)
 
 object GameState:
   def initial(players: Int, shuffled: List[Card]): GameState =
