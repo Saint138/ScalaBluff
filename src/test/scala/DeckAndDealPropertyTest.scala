@@ -29,10 +29,10 @@ class DeckAndDealingPropertySpec extends AnyFunSuite:
 
       val allDealt = hands.values.flatMap(_.cards).toList
       assert(allDealt.distinct.size == allDealt.size)
-      assert(allDealt.size + leftover.size == 52)
+      assert(allDealt.size == 52)        // tutte le carte distribuite
+      assert(leftover.size == 0)         // nessun resto
 
       val sizes = players.map(p => hands(p).cards.size)
-      assert(sizes.max - sizes.min <= 1)
-      assert(leftover.size == 52 % nPlayers)
+      assert(sizes.max - sizes.min <= 1) // bilanciamento (alcuni possono avere una carta in più)
     }
   }
