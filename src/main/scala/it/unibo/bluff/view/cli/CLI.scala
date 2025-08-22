@@ -23,9 +23,22 @@ object CLI:
     println(s"Nuova partita con $players giocatori.")
     println(s"Mazzo iniziale: ${deck.size} carte.")
     println(s"Primo turno: ${turnString(st)}")
-    println("Comandi: deal | play <rank> [n] | play-any <declRank> <n> | call | hand | pile | status | new | help | quit")
+
 
   def repl(): Unit =
+    var numPlayers: Int = 0
+    while numPlayers < 2 || numPlayers > 4 do
+      print("Inserisci il numero di giocatori (2-4): ")
+      val input = StdIn.readLine()
+      try
+        numPlayers = input.toInt
+        if numPlayers < 2 || numPlayers > 4 then
+          println("Numero non valido, inserisci un numero tra 2 e 4.")
+      catch
+        case _: NumberFormatException =>
+          println("Input non valido, inserisci un numero tra 2 e 4.")
+
+    start(numPlayers)
     running = true
     while running do
       print("\n> ")
