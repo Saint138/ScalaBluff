@@ -7,13 +7,12 @@ import it.unibo.bluff.model.state.*
 import it.unibo.bluff.model.util.RNG
 import it.unibo.bluff.engine.Engine
 import it.unibo.bluff.engine.Engine.{GameCommand, GameEvent}
-import it.unibo.bluff.model.TurnOrder
+
 
 object CLI:
 
   private var gameState: Option[GameState] = None
   private var running = false
-  // Removed invalid 'given' usage; provide TurnOrder instance if needed elsewhere.
 
   def start(players: Int = 2): Unit =
     val rng  = RNG.default()
@@ -26,19 +25,7 @@ object CLI:
 
 
   def repl(): Unit =
-    var numPlayers: Int = 0
-    while numPlayers < 2 || numPlayers > 4 do
-      print("Inserisci il numero di giocatori (2-4): ")
-      val input = StdIn.readLine()
-      try
-        numPlayers = input.toInt
-        if numPlayers < 2 || numPlayers > 4 then
-          println("Numero non valido, inserisci un numero tra 2 e 4.")
-      catch
-        case _: NumberFormatException =>
-          println("Input non valido, inserisci un numero tra 2 e 4.")
 
-    start(numPlayers)
     running = true
     while running do
       print("\n> ")
@@ -52,7 +39,18 @@ object CLI:
     toks match
       case Nil | List("") => ()
       case "new" :: _ =>
-        start(2)
+        var numPlayers: Int = 0
+        while numPlayers < 2 || numPlayers > 4 do
+           print("Inserisci il numero di giocatori (2-4): ")
+           val input = StdIn.readLine()
+           try
+             numPlayers = input.toInt
+             if numPlayers < 2 || numPlayers > 4 then
+                  println("Numero non valido, inserisci un numero tra 2 e 4.")
+           catch
+             case _: NumberFormatException =>
+                 println("Input non valido, inserisci un numero tra 2 e 4.")
+        start(numPlayers)
       case "help" :: _ =>
         println("Comandi: deal | play <rank> [n] | play-any <declRank> <n> | call | hand | pile | status | new | help | quit")
       case ("quit" | "exit") :: _ =>
