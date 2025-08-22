@@ -14,6 +14,10 @@ object CLI:
   private var gameState: Option[GameState] = None
   private var running = false
 
+  def currentState: Option[GameState] = gameState
+
+  def currentStatus: String = statusMessage()
+
   def start(players: Int = 2): Unit =
     val rng  = RNG.default()
     val deck = DeckBuilder.standardShuffled(rng)

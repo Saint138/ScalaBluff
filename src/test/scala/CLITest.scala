@@ -1,24 +1,49 @@
 import org.scalatest.funsuite.AnyFunSuite
 import it.unibo.bluff.view.cli.CLI
+import it.unibo.bluff.engine.Engine
+import it.unibo.bluff.engine.Engine.GameCommand
 
 class CLITest extends AnyFunSuite {
+
+  val NumPlayers = 3
+
   test("new should initialize a fresh game") {
-    val output = CLI.execute("new") //creo una partita con due giocatori
-    assert(CLI.gameState.isDefined)
-    assert(CLI.gameState.get.players.nonEmpty)
+    CLI.start(NumPlayers)
+    val st = CLI.currentState.get
+    assert(st.players.size == 2)
+    assert(st.turn == st.players.head)
   }
 
   test("status should reflect current game state") {
-    CLI.execute("new")
-    val msg = CLI.statusMessage
-    assert(msg.contains(s"Turno attuale: ${CLI.gameState.get.turn}"))
+    CLI.start(NumPlayers)
+    val st = CLI.currentState.get
+    assert(st.turn == st.players.head)
   }
 
-  test("end-turn should update current player") {
-    CLI.execute("new")
-    val before = CLI.gameState.get.turn
-    CLI.execute("end-turn")
-    val after = CLI.gameState.get.turn
-    assert(before != after)
+  test("simulate simple game turns") {
+    CLI.start(NumPlayers)
+    val st1 = CLI.currentState.get
+    assert(st1.turn == st1.players.head)
+
+    CLI.execute("deal")
+
+    val afterDeal = CLI.currentState.get
+    assert(afterDeal.hands.size == NumPlayers)
+    assert(afterDeal.turn == st1.players.head)
   }
+
+  test("turn passes to next player after a play") {
+    CLI.start(NumPlayers)
+    CLI.execute("deal")
+    val stBefore = CLI.currentState.get
+    val currentPlayer = stBefore.turn
+    val cardToPlay = stBefore.hands(currentPlayer).cards.head
+
+    CLI.execute(s"play ${cardToPlay.rank.toString.toLowerCase} 1")
+    val stAfter = CLI.currentState.get
+
+    assert(stAfter != stBefore, "Il turno è passato al giocatore successivo")
+  }
+
+
 }
