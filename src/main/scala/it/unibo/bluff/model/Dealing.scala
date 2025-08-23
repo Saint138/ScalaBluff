@@ -3,6 +3,26 @@ package it.unibo.bluff.model
 /** Utilities for initial distribution of cards to players. */
 object Dealing:
 
+
+  def initialDeckForPlayers(playerCount : Int, shuffler : Shuffler) : Deck = 
+    val ranksNeeded = playerCount match
+      case 2 => 5
+      case 3 => 9
+      case 4 => 13
+      case other => throw new IllegalArgumentException(s"Unsupported player count: $other")
+    val orderedRanks = Rank.order.toList
+    val subsetRanks = orderedRanks.take(ranksNeeded)
+    val cards = 
+      for
+        suit <- Suit.values.toList
+        rank <- subsetRanks
+      yield Card(rank, suit)
+    ListDeck(shuffler.shuffle(cards))
+
+  def dealInitial(players: List[PlayerId],shuffler:Shuffler): (Map[PlayerId,Hand], Deck) = 
+    val deck = initialDeckForPlayers(players.size,shuffler)
+    dealAll(players, deck)
+
   /** Distribute all cards round-robin. Returns (hands map, leftover deck). */
   def dealAll(players: List[PlayerId], deck: Deck): (Map[PlayerId, Hand], Deck) =
     require(players.nonEmpty, "Need at least one player")
