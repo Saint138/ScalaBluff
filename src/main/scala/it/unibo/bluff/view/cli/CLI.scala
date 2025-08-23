@@ -7,6 +7,8 @@ import it.unibo.bluff.model.state.*
 import it.unibo.bluff.model.util.RNG
 import it.unibo.bluff.engine.Engine
 import it.unibo.bluff.engine.Engine.{GameCommand, GameEvent}
+import it.unibo.bluff.model.Dealing
+import it.unibo.bluff.model.Shuffler
 
 object CLI:
 
@@ -18,11 +20,14 @@ object CLI:
 
   def start(players: Int = 2): Unit =
     val rng  = RNG.default()
-    val deck = DeckBuilder.standardShuffled(rng)
-    val st   = GameState.initial(players, deck)
+    val shufflerRed = Shuffler.random
+    val deckReduced = Dealing.initialDeckForPlayers(players, shufflerRed)
+    val cards: List[Card] = deckReduced match
+      case ListDeck(cs) => cs
+    val st   = GameState.initial(players, cards)
     gameState = Some(st)
     println(s"Nuova partita con $players giocatori.")
-    println(s"Mazzo iniziale: ${deck.size} carte.")
+    println(s"Mazzo iniziale: ${cards.size} carte.")
     println(s"Primo turno: ${turnString(st)}")
     println("Comandi: deal | play <rank> [n] | play-any <declRank> <n> | call | hand | pile | status | end-turn | new | help | quit")
 
