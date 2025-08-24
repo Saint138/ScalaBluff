@@ -21,7 +21,13 @@ object CLI:
   def start(players: Int = 2): Unit =
     val rng  = RNG.default()
     val deck = DeckBuilder.standardShuffled(rng)
-    val st   = GameState.initial(players, deck)
+
+    val names = (0 until players).map {i =>
+      print(s"Inserisci il nome per il giocatore ${i+1}: ")
+      scala.io.StdIn.readLine()
+    }.toVector
+
+    val st   = GameState.initial(players,names, deck)
     gameState = Some(st)
     println(s"Nuova partita con $players giocatori.")
     println(s"Mazzo iniziale: ${deck.size} carte.")

@@ -22,8 +22,10 @@ final case class GameState(
   turn: PlayerId,
   lastDeclaration: Option[Declaration],
   pendingPenalty: Option[PlayerId],
-  finished: Boolean
+  finished: Boolean,
+  playersNames: Map[PlayerId, String]
 ):
+  def nameOf(player: PlayerId): String = playersNames(player)
   def nextPlayer(using order: TurnOrder): PlayerId = order.next(players, turn)
   //card distribution 
   def applyInitialDistribution: GameState =
@@ -36,6 +38,7 @@ final case class GameState(
       this.copy(hands = distributed, deck = remainingCards)
 
 object GameState:
-  def initial(players: Int, shuffled: List[Card]): GameState =
+  def initial(players: Int,playerNames: Vector[String], shuffled: List[Card]): GameState =
     val ids = Vector.tabulate(players)(PlayerId.apply)
-    GameState(ids, Map.empty, shuffled, CenterPile.empty, ids.head, None, None, false)
+    val nameMap = ids.zip(playerNames).toMap
+    GameState(ids, Map.empty, shuffled, CenterPile.empty, ids.head, None, None, false, nameMap)
