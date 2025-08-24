@@ -14,10 +14,12 @@ final class GameScenarioTest extends AnyFunSuite {
   private def pileSize(st: GameState): Int =
     st.pile.allCards.size
 
+  private val names2 = Vector("Player1", "Player2")
+  
   test("Scenario: Deal → Play (vero) → CallBluff (vero → accusa fallita, accusatore prende la pila)") {
     val rng    = RNG.default()
     val deck   = DeckBuilder.standardShuffled(rng)
-    val state0 = GameState.initial(players = 2, deck)
+    val state0 = GameState.initial(players = names2.size,  names2 ,  deck)
 
     val (st1, _) = GameEngine.applyCommand(state0, GameCommand.Deal).fold(err => fail(err), identity)
 
@@ -40,7 +42,7 @@ final class GameScenarioTest extends AnyFunSuite {
   test("Scenario: Deal → Play (falso) → CallBluff (vero → pila al dichiarante)") {
     val rng   = RNG.default()
     val deck  = DeckBuilder.standardShuffled(rng)
-    val st0   = GameState.initial(players = 2, deck)
+    val st0   = GameState.initial(players = names2.size, names2, deck)
 
     val (st1, _) = GameEngine.applyCommand(st0, GameCommand.Deal).fold(err => fail(err), identity)
 

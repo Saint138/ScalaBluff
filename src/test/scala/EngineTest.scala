@@ -13,10 +13,14 @@ final class EngineTest extends AnyFunSuite {
   private def pileSize(st: GameState): Int =
     st.pile.allCards.size
 
+  private val names2 = Vector("Player1", "Player2")
+  private val names3 = Vector("Player1", "Player2", "Player3")
+  private val names4 = Vector("Player1", "Player2", "Player3", "Player4")
+  
   test("Deal distribuisce tutte le carte round-robin nelle mani e svuota il deck") {
     val rng   = RNG.default()
     val deck  = DeckBuilder.standardShuffled(rng)
-    val st0   = GameState.initial(players = 4, deck)
+    val st0   = GameState.initial(players = names4.size, names4, deck)
 
     val (st1, events) = Engine.step(st0, GameCommand.Deal).fold(err => fail(err), identity)
 
@@ -33,7 +37,7 @@ final class EngineTest extends AnyFunSuite {
   test("Play rimuove le carte dalla mano, le mette nella pila e memorizza la dichiarazione") {
     val rng   = RNG.default()
     val deck  = DeckBuilder.standardShuffled(rng)
-    val st0   = GameState.initial(players = 3, deck)
+    val st0   = GameState.initial(players = names3.size,names3,  deck)
     val (st1, _) = Engine.step(st0, GameCommand.Deal).fold(err => fail(err), identity)
 
     val current     = st1.turn
@@ -56,7 +60,7 @@ final class EngineTest extends AnyFunSuite {
   test("CallBluff: se la dichiarazione è falsa il dichiarante prende la pila, altrimenti l'accusatore") {
     val rng   = RNG.default()
     val deck  = DeckBuilder.standardShuffled(rng)
-    val st0   = GameState.initial(players = 2, deck)
+    val st0   = GameState.initial(players = names2.size, names2,  deck)
     val (st1, _) = Engine.step(st0, GameCommand.Deal).fold(err => fail(err), identity)
 
     val p0 = st1.turn
