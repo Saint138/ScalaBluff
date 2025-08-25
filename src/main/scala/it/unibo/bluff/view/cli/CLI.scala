@@ -31,15 +31,15 @@ object CLI:
     gameState = Some(st)
     println(s"Nuova partita con $players giocatori.")
     println(s"Mazzo iniziale: ${deck.size} carte.")
-    println(s"Primo turno: ${turnString(st)}")
-
+    println(s"Primo turno: ${st.nameOf(st.turn)}")
+    withState(st => step(st, GameCommand.Deal))
 
   def repl(): Unit =
+    print("\n> ")
+    println("Comandi: new | help ")
 
     running = true
     while running do
-      print("\n> ")
-      println("Comandi: deal | play <rank> [n] | play-any <declRank> <n> | call | hand | pile | status | new | help | quit")
       print("> ")
       val line = Option(StdIn.readLine()).getOrElse("")
       execute(line)
@@ -48,6 +48,10 @@ object CLI:
     val toks = input.trim.split("\\s+").toList
     toks match
       case Nil | List("") => ()
+      case "quit" :: _ =>
+        running = false
+      case "help" :: _ =>
+        println("Comandi: new | help | quit" + (if gameState.isDefined then " |deal | play <rank> [n] | play-any <declRank> <n> | call | hand | pile | status | quit" else ""))
       case "new" :: _ =>
         var numPlayers: Int = 0
         while numPlayers < 2 || numPlayers > 4 do
@@ -61,54 +65,48 @@ object CLI:
              case _: NumberFormatException =>
                  println("Input non valido, inserisci un numero tra 2 e 4.")
         start(numPlayers)
-      case "help" :: _ =>
-        println("Comandi: deal | play <rank> [n] | play-any <declRank> <n> | call | hand | pile | status | new | help | quit")
-      case ("quit" | "exit") :: _ =>
-        running = false
-      case "status" :: _ =>
-        println(statusMessage())
-      case "hand" :: _ =>
-        printHand()
-      case "pile" :: _ =>
-        printPile()
-      case "deal" :: _ =>
-        withState { st => step(st, GameCommand.Deal) }
-      case "call" :: _ =>
-        withState { st =>
-          val me = st.turn
-          step(st, GameCommand.CallBluff(me))
-        }
-      case "play" :: rankStr :: rest =>
-        withState { st =>
-          parseRank(rankStr) match
-            case Left(err) => println(err)
-            case Right(rank) =>
-              val n = rest.headOption.flatMap(_.toIntOption).getOrElse(1)
-              val me   = st.turn
-              val hand = st.hands.getOrElse(me, Hand.empty).cards
-              val toPlay = hand.filter(_.rank == rank).take(n)
-              if toPlay.size != n then
-                println(s"Non hai $n carte di rango $rank.")
-              else
-                step(st, GameCommand.Play(me, toPlay, rank))
-        }
-      case "play-any" :: declStr :: nStr :: Nil =>
-        withState { st =>
-          parseRank(declStr) match
-            case Left(err) => println(err)
-            case Right(decl) =>
-              val n = nStr.toIntOption.getOrElse(1)
-              val me   = st.turn
-              val hand = st.hands.getOrElse(me, Hand.empty).cards
-              if hand.size < n then println(s"Non hai $n carte da giocare.")
-              else
-                val toPlay = hand.take(n)              // carte QUALSIASI → può essere un bluff
-                step(st, GameCommand.Play(me, toPlay, decl))
-  }
-      case "play" :: _ =>
-        println("Uso: play <rank> [n]  es: play ace 2  / play K")
+
       case other =>
-        println(s"Comando sconosciuto: ${other.mkString(" ")}")
+        if gameState.isEmpty then
+          println ("Nessuna partita in corso. Usa 'new' per iniziare o 'help' per aiuto.")
+        else
+          other match
+            case "status" :: _ => println(statusMessage())
+            case "hand" :: _ => printHand()
+            case "pile" :: _ => printPile()
+            case "call" :: _ => withState(st => step(st, GameCommand.CallBluff(st.turn)))
+            case "play" :: rankStr :: rest =>
+              withState { st =>
+                parseRank(rankStr) match
+                  case Left(err) => println(err)
+                  case Right(rank) =>
+                    val n = rest.headOption.flatMap(_.toIntOption).getOrElse(1)
+                    val me = st.turn
+                    val hand = st.hands.getOrElse(me, Hand.empty).cards
+                    val toPlay = hand.filter(_.rank == rank).take(n)
+                    if toPlay.size != n then
+                      println(s"Non hai $n carte di rango $rank.")
+                    else
+                      step(st, GameCommand.Play(me, toPlay, rank))
+              }
+            case "play-any" :: declStr :: nStr :: Nil =>
+              withState { st =>
+                parseRank(declStr) match
+                  case Left(err) => println(err)
+                  case Right(decl) =>
+                    val n = nStr.toIntOption.getOrElse(1)
+                    val me = st.turn
+                    val hand = st.hands.getOrElse(me, Hand.empty).cards
+                    if hand.size < n then println(s"Non hai $n carte da giocare.")
+                    else
+                      val toPlay = hand.take(n)
+                      step(st, GameCommand.Play(me, toPlay, decl))
+              }
+            case "play" :: _ =>
+              println("Uso: play <rank> [n]")
+            case _ =>
+               println(s"Comando sconosciuto: ${other.mkString(" ")}")
+
       
 
 
@@ -147,7 +145,7 @@ object CLI:
         val pileSize   = st.pile.allCards.size
         val lastDecl   = st.lastDeclaration.map(d => s"${d.player.value}→${d.declared} (${d.hiddenCards.size})").getOrElse("-")
         s"""Stato:
-           |  Turno: ${turnString(st)}
+           |  Turno: ${st.nameOf(st.turn)}
            |  Carte in mano: [$handsSizes]
            |  Pila centrale: $pileSize carte
            |  Ultima dichiarazione: $lastDecl
@@ -157,10 +155,9 @@ object CLI:
     gameState match
       case None => println("Nessuna partita in corso.")
       case Some(st) =>
-        val me   = st.turn
-        val hand = st.hands.getOrElse(me, Hand.empty).cards
+        val hand = st.hands.getOrElse(st.turn, Hand.empty).cards
         val byRank = hand.groupBy(_.rank).toSeq.sortBy(_._1.ordinal).map{ case (r, cs) => s"$r:${cs.size}"}.mkString(", ")
-        println(s"Giocatore ${me.value} – carte per rango: $byRank")
+        println(s"Giocatore ${st.nameOf(st.turn)} – carte per rango: $byRank")
 
   private def printPile(): Unit =
     gameState match
