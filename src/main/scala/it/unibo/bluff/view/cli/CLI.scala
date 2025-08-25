@@ -25,11 +25,14 @@ object CLI:
     val cards: List[Card] = deckReduced match
       case ListDeck(cs) => cs
     val st   = GameState.initial(players, cards)
+    val (handsMap, _) = Dealing.dealAll(st.players.toList, ListDeck(cards))
+    val st0 = st.copy(hands = handsMap , deck = Nil)
     gameState = Some(st)
     println(s"Nuova partita con $players giocatori.")
     println(s"Mazzo iniziale: ${cards.size} carte.")
+    println(s"Carte distribuite automaticamente: mani = ${st.hands.toSeq.sortBy(_._1.value).map{case(pid,h)=>s"${pid.value}:${h.size}"}.mkString(", ")}")
     println(s"Primo turno: ${turnString(st)}")
-    println("Comandi: deal | play <rank> [n] | play-any <declRank> <n> | call | hand | pile | status | end-turn | new | help | quit")
+    println("Comandi: play <rank> [n] | play-any <declRank> <n> | call | hand | pile | status | end-turn | new | help | quit")
 
   def repl(): Unit =
     running = true
@@ -57,7 +60,12 @@ object CLI:
       case "pile" :: _ =>
         printPile()
       case "deal" :: _ =>
-        withState { st => step(st, GameCommand.Deal) }
+        withState { st =>
+          if st.hands.nonEmpty then
+            println("Carte già distribuite automaticamente all'inizio.")
+          else
+            step(st, GameCommand.Deal)
+        }
       case "call" :: _ =>
         withState { st =>
           val me = st.turn
