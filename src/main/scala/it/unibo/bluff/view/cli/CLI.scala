@@ -24,15 +24,16 @@ object CLI:
     val deckReduced = Dealing.initialDeckForPlayers(players, shufflerRed)
     val cards: List[Card] = deckReduced match
       case ListDeck(cs) => cs
-    val st   = GameState.initial(players, cards)
-    val (handsMap, _) = Dealing.dealAll(st.players.toList, ListDeck(cards))
-    val st0 = st.copy(hands = handsMap , deck = Nil)
-    gameState = Some(st)
+    val base  = GameState.initial(players, cards)
+    val (handsMap, _) = Dealing.dealAll(base.players.toList, ListDeck(cards))
+    val distributed = base.copy(hands = handsMap , deck = Nil)
+    gameState = Some(distributed)
+    val distributedHands = handsMap.toSeq.sortBy(_._1.value).map{case(pid,h)=>s"${pid.value}:${h.size}"}.mkString(", ")
     println(s"Nuova partita con $players giocatori.")
     println(s"Mazzo iniziale: ${cards.size} carte.")
-    println(s"Carte distribuite automaticamente: mani = ${st.hands.toSeq.sortBy(_._1.value).map{case(pid,h)=>s"${pid.value}:${h.size}"}.mkString(", ")}")
-    println(s"Primo turno: ${turnString(st)}")
-    println("Comandi: play <rank> [n] | play-any <declRank> <n> | call | hand | pile | status | end-turn | new | help | quit")
+    println(s"Carte distribuite automaticamente: mani = $distributedHands")
+    println(s"Primo turno: ${turnString(distributed)}")
+    //println("Comandi: play <rank> [n] | play-any <declRank> <n> | call | hand | pile | status | end-turn | new | help | quit")
 
   def repl(): Unit =
     running = true
