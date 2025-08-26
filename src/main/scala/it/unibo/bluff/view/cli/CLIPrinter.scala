@@ -10,7 +10,7 @@ object  CLIPrinter:
   def printStatus(st: GameState): Unit =
     val handsSizes = st.hands.toSeq.sortBy(_._1.value).map { case (pid, h) => s"${pid.value}:${h.size}" }.mkString(", ")
     val pileSize = st.pile.allCards.size
-    val lastDecl = st.lastDeclaration.map(d => s"${st.nameOf(d.player)}→${d.declared} (${d.hiddenCards.size})").getOrElse("-")
+    val lastDecl = st.lastDeclaration.map(d => s"${st.nameOf(d.player)} -> ${d.declared} (${d.hiddenCards.size})").getOrElse("-")
     println(
       s"""Stato:
          |  Turno: ${st.nameOf(st.turn)}
@@ -22,7 +22,8 @@ object  CLIPrinter:
   def printHand(st: GameState): Unit =
     val hand = st.hands.getOrElse(st.turn, Hand.empty).cards
     val byRank = hand.groupBy(_.rank).toSeq.sortBy(_._1.ordinal).map { case (r, cs) => s"$r:${cs.size}" }.mkString(", ")
-    println(s"Giocatore ${st.nameOf(st.turn)} – carte per rango: $byRank")
+    //println(s"Giocatore ${st.nameOf(st.turn)} – carte per rango: $byRank")
+    println(s"Giocatore ${st.nameOf(st.turn)} - carte per rango: $byRank")
 
 
   def printPile(st: GameState): Unit =
