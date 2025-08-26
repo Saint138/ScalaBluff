@@ -27,3 +27,4 @@ project/plugins/project/
 # OS Data
 .DS_Store
 .metals/metals.lock.db
+.metals/metals.lock.db
