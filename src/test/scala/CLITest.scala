@@ -1,3 +1,5 @@
+package it.unibo.bluff.view.cli
+
 import org.scalatest.funsuite.AnyFunSuite
 import it.unibo.bluff.view.cli.CLI
 import it.unibo.bluff.engine.Engine

@@ -11,6 +11,8 @@ import it.unibo.bluff.model.util.RNG
 
 object CLI:
   private var gameState: Option[GameState] = None
+  def state: Option[GameState] = gameState
+
   private var running = false
 
   def repl(): Unit =

@@ -33,6 +33,7 @@ object Engine:
     final case class Dealt(handsSize: Map[PlayerId, Int]) extends GameEvent
     final case class Played(player: PlayerId, declared: Rank, count: Int) extends GameEvent
     final case class BluffCalled(by: PlayerId, against: Declaration, truthful: Boolean) extends GameEvent
+    final case class DeclarationMade(player: PlayerId, declared: Rank, cards: List[Card]) extends GameEvent
 
   import GameCommand.*
   import GameEvent.*

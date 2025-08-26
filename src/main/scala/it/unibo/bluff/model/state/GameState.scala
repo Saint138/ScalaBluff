@@ -24,6 +24,7 @@ final case class GameState(
   pendingPenalty: Option[PlayerId],
   finished: Boolean,
   playersNames: Map[PlayerId, String]
+  fixedDeclaredRank: Option[Rank]
 ):
   def nameOf(player: PlayerId): String = playersNames(player)
   def nextPlayer(using order: TurnOrder): PlayerId = order.next(players, turn)
@@ -42,3 +43,14 @@ object GameState:
     val ids = Vector.tabulate(players)(PlayerId.apply)
     val nameMap = ids.zip(playerNames).toMap
     GameState(ids, Map.empty, shuffled, CenterPile.empty, ids.head, None, None, false, nameMap)
+    GameState(
+      players = ids,
+      hands = Map.empty,
+      deck = shuffled,
+      pile = CenterPile.empty,
+      turn = ids.head,
+      lastDeclaration = None,
+      pendingPenalty = None,
+      finished = false,
+      fixedDeclaredRank = None
+    )
