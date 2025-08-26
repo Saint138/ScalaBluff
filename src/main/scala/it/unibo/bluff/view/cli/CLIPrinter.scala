@@ -10,7 +10,7 @@ object  CLIPrinter:
   def printStatus(st: GameState): Unit =
     val handsSizes = st.hands.toSeq.sortBy(_._1.value).map { case (pid, h) => s"${pid.value}:${h.size}" }.mkString(", ")
     val pileSize = st.pile.allCards.size
-    val lastDecl = st.lastDeclaration.map(d => s"${d.player.value}→${d.declared} (${d.hiddenCards.size})").getOrElse("-")
+    val lastDecl = st.lastDeclaration.map(d => s"${st.nameOf(d.player)}→${d.declared} (${d.hiddenCards.size})").getOrElse("-")
     println(
       s"""Stato:
          |  Turno: ${st.nameOf(st.turn)}
@@ -28,28 +28,37 @@ object  CLIPrinter:
   def printPile(st: GameState): Unit =
     println(s"Pila: ${st.pile.allCards.size} carte totali")
 
-  def printEvents(events: Seq[GameEvent]): Unit =
+  def printEvents(events: Seq[GameEvent], st: GameState): Unit =
     events.foreach {
       case GameEvent.Dealt(sizes) =>
         val pretty = sizes.toSeq.sortBy(_._1.value).map { case (pid, sz) => s"${pid.value}:$sz" }.mkString(", ")
-        println(s"Event: carte distribuite → [$pretty]")
+        println(s"Event: carte distribuite : [$pretty]")
       case GameEvent.Played(player, declared, count) =>
-        println(s"Event: player ${player.value} dichiara $declared e gioca $count carte")
+        println(s"Event:  ${st.nameOf(player)} dichiara $declared e gioca $count carte")
       case GameEvent.BluffCalled(by, against, truthful) =>
         val esito = if truthful then "VERA" else "FALSA"
-        println(s"Event: accusa di bluff da ${by.value} contro ${against.player.value} → dichiarazione $esito")
+        println(s"Event: accusa di bluff da ${st.nameOf(by)} contro ${st.nameOf(against.player)} : dichiarazione $esito")
     }
 
   def parseRank(s: String): Either[String, Rank] =
-    val norm = s.trim.toLowerCase
+    val norm = s.trim
     val mapping: Map[String, Rank] = Map(
-      "a" -> Rank.Ace, "ace" -> Rank.Ace,
-      "k" -> Rank.King, "king" -> Rank.King,
-      "q" -> Rank.Queen, "queen" -> Rank.Queen,
-      "j" -> Rank.Jack, "jack" -> Rank.Jack,
-      "10" -> Rank.Ten, "t" -> Rank.Ten,
-      "9" -> Rank.Nine, "8" -> Rank.Eight, "7" -> Rank.Seven,
-      "6" -> Rank.Six, "5" -> Rank.Five, "4" -> Rank.Four,
-      "3" -> Rank.Three, "2" -> Rank.Two
+      "Asso" -> Rank.Asso,
+      "K" -> Rank.King,
+      "Q" -> Rank.Queen,
+      "J" -> Rank.Jack,
+      "Dieci" -> Rank.Dieci,
+      "Nove" -> Rank.Nove,
+      "Otto" -> Rank.Otto,
+      "Sette" -> Rank.Sette,
+      "Sei" -> Rank.Sei,
+      "Cinque" -> Rank.Cinque,
+      "Quattro" -> Rank.Quattro,
+      "Tre" -> Rank.Tre,
+      "Due" -> Rank.Due
     )
     mapping.get(norm).toRight(s"Rank non riconosciuto: $s")
+
+
+
+

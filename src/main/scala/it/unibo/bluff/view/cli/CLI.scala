@@ -35,7 +35,7 @@ object CLI:
       case Left(err) => println(s"Errore: $err")
       case Right((st2, events)) =>
         gameState = Some(st2)
-        CLIPrinter.printEvents(events)
+        CLIPrinter.printEvents(events, state)
         CLIPrinter.printStatus(st2)
 
   private def promptPlayersCount(): Int =

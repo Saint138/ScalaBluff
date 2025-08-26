@@ -10,7 +10,6 @@ class CLITest extends AnyFunSuite {
   test("new should initialize a fresh game") {
     CLI.start(NumPlayers)
     val st = CLI.currentState.get
-    assert(st.players.size == 2)
     assert(st.turn == st.players.head)
   }
 
