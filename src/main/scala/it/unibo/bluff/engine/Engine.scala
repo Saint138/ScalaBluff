@@ -14,6 +14,7 @@ import it.unibo.bluff.model.TurnOrder
   * - Center pile management (uses state.CenterPile)
   * - Accuse last declaration: if truthful → accuser picks the pile, else the declarer picks the pile.
   * - After a bluff resolution, the picker becomes the next player (common rule); customize below if needed.
+  * - Game end: when any hand reaches 0 cards → emits GameEnded(winner) and refuses further moves.
   */
 object Engine:
 
@@ -33,22 +34,28 @@ object Engine:
     final case class Dealt(handsSize: Map[PlayerId, Int]) extends GameEvent
     final case class Played(player: PlayerId, declared: Rank, count: Int) extends GameEvent
     final case class BluffCalled(by: PlayerId, against: Declaration, truthful: Boolean) extends GameEvent
-    final case class DeclarationMade(player: PlayerId, declared: Rank, cards: List[Card]) extends GameEvent
+    // --- NEW: evento di fine partita
+    final case class GameEnded(winner: PlayerId) extends GameEvent
 
   import GameCommand.*
   import GameEvent.*
 
   /** Single state transition */
   def step(state: GameState, cmd: GameCommand)(using TurnOrder): Either[String, (GameState, List[GameEvent])] =
-    cmd match
-      case Deal          => Right(deal(state))
-      case p: Play       => play(state, p)
-      case c: CallBluff  => call(state, c)
+    for
+      _ <- ensureNotEnded(state) // NEW: blocca mosse dopo la fine
+      res <- cmd match
+        case Deal          => Right(deal(state))
+        case p: Play       => play(state, p)
+        case c: CallBluff  => call(state, c)
+      (st2, evs) = res
+      out = withWinEvent(st2, evs) // NEW: controlla vittoria dopo la mossa
+    yield out
 
   // ===== Implementation =====
 
   /**
-    * Deal all deck cards to all players in round‑robin. Idempotent: if deck is empty or hands are non‑empty it returns Nil events.
+    * Deal all deck cards to all players in round-robin. Idempotent: if deck is empty it returns Nil events.
     */
   private def deal(state: GameState): (GameState, List[GameEvent]) =
     if state.deck.isEmpty then
@@ -56,13 +63,11 @@ object Engine:
     else
       val n = state.players.size
       val emptyHands: Map[PlayerId, Hand] = state.players.map(_ -> Hand(Nil)).toMap
-      // Round‑robin distribution
-      val hands = state.deck.zipWithIndex
-        .foldLeft(emptyHands) { case (accHands, (card, i)) =>
-          val pid = state.players(i % n)
-          val updated = accHands.updated(pid, Hand(card :: accHands(pid).cards))
-          updated
-        }
+      // Round-robin distribution
+      val hands = state.deck.zipWithIndex.foldLeft(emptyHands) { case (accHands, (card, i)) =>
+        val pid = state.players(i % n)
+        accHands.updated(pid, Hand(card :: accHands(pid).cards))
+      }
       val newState = state.copy(hands = hands, deck = Nil)
       val sizes = hands.view.mapValues(_.size).toMap
       newState -> List(Dealt(sizes))
@@ -76,8 +81,8 @@ object Engine:
 
   private def play(state: GameState, cmd: Play)(using TurnOrder): Either[String, (GameState, List[GameEvent])] =
     for
-      _    <- ensureTurn(state, cmd.player)
-      _    <- if cmd.cards.nonEmpty then Right(()) else Left("Devi giocare almeno una carta")
+      _       <- ensureTurn(state, cmd.player)
+      _       <- if cmd.cards.nonEmpty then Right(()) else Left("Devi giocare almeno una carta")
       newHand <- ensureOwns(state, cmd.player, cmd.cards)
     yield
       val updatedHands = state.hands.updated(cmd.player, newHand)
@@ -102,7 +107,7 @@ object Engine:
           val pileCards = state.pile.allCards
           val (receiver, nextTurn) =
             if truthful then (cmd.player, decl.player)   // accusa fallita → accuser prende il mazzo, tocca al dichiarante
-            else (decl.player, cmd.player)               // bluff riuscito → dichiarante prende il mazzo, tocca all'accusatore
+            else           (decl.player, cmd.player)     // bluff riuscito  → dichiarante prende il mazzo, tocca all'accusatore
 
           val receiverHand = state.hands.getOrElse(receiver, Hand(Nil)).addAll(pileCards)
           val newHands = state.hands.updated(receiver, receiverHand)
@@ -116,8 +121,27 @@ object Engine:
           )
           Right(st2 -> List(BluffCalled(cmd.player, decl, truthful)))
 
+  // ===== NEW: helpers per gestione fine partita =====
 
-// ---- Backward‑compat shim for old tests ----
+  /** Rifiuta mosse se qualcuno ha già vinto. */
+  private def ensureNotEnded(state: GameState): Either[String, Unit] =
+    winnerIfAny(state)
+      .map(pid => s"Partita terminata: ha già vinto ${state.nameOf(pid)}") // <-- mappa PlayerId in String
+      .toLeft(()) // Option[String] -> Either[String, Unit]
+
+
+  /** Ritorna il vincitore se trova una mano a 0. */
+  private def winnerIfAny(state: GameState): Option[PlayerId] =
+    state.hands.collectFirst { case (pid, hand) if hand.size == 0 => pid }
+
+  /** Appende GameEnded se rileva una mano a 0. */
+  private def withWinEvent(st: GameState, evs: List[GameEvent]): (GameState, List[GameEvent]) =
+    winnerIfAny(st) match
+      case Some(w) => st -> (evs :+ GameEnded(w))
+      case None    => st -> evs
+
+
+// ---- Backward-compat shim for old tests ----
 object GameEngine:
   export Engine.GameEvent
   export Engine.GameCommand
