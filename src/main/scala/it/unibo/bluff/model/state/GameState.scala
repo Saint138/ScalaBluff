@@ -23,7 +23,7 @@ final case class GameState(
   lastDeclaration: Option[Declaration],
   pendingPenalty: Option[PlayerId],
   finished: Boolean,
-  playersNames: Map[PlayerId, String]
+  playersNames: Map[PlayerId, String],
   fixedDeclaredRank: Option[Rank]
 ):
   def nameOf(player: PlayerId): String = playersNames(player)
@@ -42,7 +42,6 @@ object GameState:
   def initial(players: Int,playerNames: Vector[String], shuffled: List[Card]): GameState =
     val ids = Vector.tabulate(players)(PlayerId.apply)
     val nameMap = ids.zip(playerNames).toMap
-    GameState(ids, Map.empty, shuffled, CenterPile.empty, ids.head, None, None, false, nameMap)
     GameState(
       players = ids,
       hands = Map.empty,
@@ -52,5 +51,6 @@ object GameState:
       lastDeclaration = None,
       pendingPenalty = None,
       finished = false,
+      playersNames = nameMap,
       fixedDeclaredRank = None
     )
