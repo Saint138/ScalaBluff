@@ -126,6 +126,8 @@ object CLI:
       println(s"Event: carte distribuite → [$pretty]")
     case GameEvent.Played(player, declared, count) =>
       println(s"Event: player ${player.value} dichiara $declared e gioca $count carte")
+    case GameEvent.DeclarationMade(player, declared, cards) =>            // <-- aggiunto
+      println(s"Event: player ${player.value} dichiara $declared e gioca ${cards.size} carte")
     case GameEvent.BluffCalled(by, against, truthful) =>
       val esito = if truthful then "VERA" else "FALSA"
       println(s"Event: accusa di bluff da ${by.value} contro ${against.player.value} → dichiarazione $esito")

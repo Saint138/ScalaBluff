@@ -22,7 +22,8 @@ final case class GameState(
   turn: PlayerId,
   lastDeclaration: Option[Declaration],
   pendingPenalty: Option[PlayerId],
-  finished: Boolean
+  finished: Boolean,
+  fixedDeclaredRank: Option[Rank]
 ):
   def nextPlayer(using order: TurnOrder): PlayerId = order.next(players, turn)
   //card distribution 
@@ -38,4 +39,14 @@ final case class GameState(
 object GameState:
   def initial(players: Int, shuffled: List[Card]): GameState =
     val ids = Vector.tabulate(players)(PlayerId.apply)
-    GameState(ids, Map.empty, shuffled, CenterPile.empty, ids.head, None, None, false)
+    GameState(
+      players = ids,
+      hands = Map.empty,
+      deck = shuffled,
+      pile = CenterPile.empty,
+      turn = ids.head,
+      lastDeclaration = None,
+      pendingPenalty = None,
+      finished = false,
+      fixedDeclaredRank = None
+    )
