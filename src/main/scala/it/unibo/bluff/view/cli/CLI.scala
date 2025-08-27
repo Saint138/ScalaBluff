@@ -2,7 +2,7 @@ package it.unibo.bluff.view.cli
 
 import it.unibo.bluff.engine.Engine
 import it.unibo.bluff.engine.Engine.{GameCommand, GameEvent}
-import it.unibo.bluff.model.DeckBuilder
+import it.unibo.bluff.model.*
 import it.unibo.bluff.model.state.GameState
 import it.unibo.bluff.model.util.RNG
 
@@ -47,11 +47,11 @@ object CLI:
         CLIPrinter.printStatus(st2)
 
         // Chiudi REPL se la partita è finita
-        if events.exists(_.isInstanceOf[GameEvent.GameEnded]) then
-          println("Partita terminata. Digita 'new' per iniziare una nuova partita o 'quit' per uscire.")
+        //if events.exists(_.isInstanceOf[GameEvent.GameEnded]) then
+          //println("Partita terminata. Digita 'new' per iniziare una nuova partita o 'quit' per uscire.")
           // (opzionale) azzera lo stato per bloccare comandi di gioco post-fine:
           // gameState = None
-          running = false
+          //running = false
 
   // -------------------- Helpers interni --------------------
 
@@ -71,8 +71,10 @@ object CLI:
 
   /** Inizializza lo stato e distribuisce subito le carte. */
   private def initGame(numPlayers: Int, names: Vector[String]): Unit =
-    val rng  = RNG.default()
-    val deck = DeckBuilder.standardShuffled(rng)
+    val shuffler = Shuffler.random
+    val deckObj = Dealing.initialDeckForPlayers(numPlayers, shuffler)
+    val deck = deckObj match
+      case ListDeck(cs) => cs
     val st   = GameState.initial(players = numPlayers, playerNames = names, shuffled = deck)
     gameState = Some(st)
     println(s"Nuova partita con $numPlayers giocatori.")

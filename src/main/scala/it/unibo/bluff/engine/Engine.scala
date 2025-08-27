@@ -81,19 +81,27 @@ object Engine:
 
   private def play(state: GameState, cmd: Play)(using TurnOrder): Either[String, (GameState, List[GameEvent])] =
     for
-      _       <- ensureTurn(state, cmd.player)
-      _       <- if cmd.cards.nonEmpty then Right(()) else Left("Devi giocare almeno una carta")
-      newHand <- ensureOwns(state, cmd.player, cmd.cards)
+      _        <- ensureTurn(state, cmd.player)
+      // enforce non-empty play
+      _        <- if cmd.cards.nonEmpty then Right(()) else Left("Devi giocare almeno una carta")
+      // enforce fixed declared rank if present
+      _        <- state.fixedDeclaredRank match
+                    case Some(r) if r != cmd.declared => Left(s"Devi dichiarare $r")
+                    case _ => Right(())
+      newHand  <- ensureOwns(state, cmd.player, cmd.cards)
     yield
       val updatedHands = state.hands.updated(cmd.player, newHand)
       val newPile = state.pile.push(cmd.cards)
       val decl = Declaration(cmd.player, cmd.declared, cmd.cards)
       val next = state.nextPlayer
+      // If there was no fixedDeclaredRank, set it to this declared rank; otherwise keep existing
+      val newFixed = state.fixedDeclaredRank.orElse(Some(cmd.declared))
       val st1 = state.copy(
         hands = updatedHands,
         pile = newPile,
         lastDeclaration = Some(decl),
-        turn = next
+        turn = next,
+        fixedDeclaredRank = newFixed
       )
       st1 -> List(Played(cmd.player, cmd.declared, cmd.cards.size))
 
@@ -117,7 +125,8 @@ object Engine:
             hands = newHands,
             pile = cleared,
             lastDeclaration = None,
-            turn = nextTurn
+            turn = nextTurn,
+            fixedDeclaredRank = None
           )
           Right(st2 -> List(BluffCalled(cmd.player, decl, truthful)))
 

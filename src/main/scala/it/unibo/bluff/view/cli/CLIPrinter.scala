@@ -13,9 +13,7 @@ object CLIPrinter:
       .map { case (pid, h) => s"${st.nameOf(pid)}:${h.size}" }
       .mkString(", ")
     val pileSize = st.pile.allCards.size
-    val lastDecl = st.lastDeclaration
-      .map(d => s"${st.nameOf(d.player)}→${d.declared} (${d.hiddenCards.size})")
-      .getOrElse("-")
+    val lastDecl = st.lastDeclaration.map(d => s"${st.nameOf(d.player)} -> ${d.declared} (${d.hiddenCards.size})").getOrElse("-")
     println(
       s"""Stato:
          |  Turno: ${st.nameOf(st.turn)}
@@ -31,7 +29,8 @@ object CLIPrinter:
     val byRank = hand.groupBy(_.rank).toSeq.sortBy(_._1.ordinal).map {
       case (r, cs) => s"$r:${cs.size}"
     }.mkString(", ")
-    println(s"Giocatore ${st.nameOf(st.turn)} – carte per rango: $byRank")
+    //println(s"Giocatore ${st.nameOf(st.turn)} – carte per rango: $byRank")
+    println(s"Giocatore ${st.nameOf(st.turn)} - carte per rango: $byRank")
 
   /** Stampa lo stato della pila centrale */
   def printPile(st: GameState): Unit =
@@ -54,8 +53,8 @@ object CLIPrinter:
         val esito = if truthful then "VERA" else "FALSA"
         println(s"Event: accusa di bluff da ${st.nameOf(by)} contro ${st.nameOf(against.player)} → dichiarazione $esito")
 
-      case GameEvent.GameEnded(winner) =>
-        println(s"🏆 Vince ${st.nameOf(winner)}!")
+      //case GameEvent.GameEnded(winner) =>
+      // println(s"🏆 Vince ${st.nameOf(winner)}!")
     }
 
   /** Parsing rank in italiano con alias (case-insensitive) */
