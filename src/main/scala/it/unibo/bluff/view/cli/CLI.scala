@@ -4,7 +4,6 @@ import it.unibo.bluff.engine.Engine
 import it.unibo.bluff.engine.Engine.{GameCommand, GameEvent}
 import it.unibo.bluff.model.*
 import it.unibo.bluff.model.state.GameState
-import it.unibo.bluff.model.util.RNG
 
 import scala.io.StdIn
 
@@ -45,13 +44,13 @@ object CLI:
         // Stampa eventi e stato aggiornato (passo st2 per i nomi)
         CLIPrinter.printEvents(events, st2)
         CLIPrinter.printStatus(st2)
+        // Mostra automaticamente la mano del giocatore di turno
+        CLIPrinter.printHand(st2)
 
-        // Chiudi REPL se la partita è finita
-        //if events.exists(_.isInstanceOf[GameEvent.GameEnded]) then
-          //println("Partita terminata. Digita 'new' per iniziare una nuova partita o 'quit' per uscire.")
-          // (opzionale) azzera lo stato per bloccare comandi di gioco post-fine:
-          // gameState = None
-          //running = false
+        // Se vuoi chiudere il REPL a fine partita, decommenta:
+        // if events.exists(_.isInstanceOf[GameEvent.GameEnded]) then
+        //   println("🏁 Partita terminata. Digita 'new' per iniziare una nuova partita o 'quit' per uscire.")
+        //   running = false
 
   // -------------------- Helpers interni --------------------
 
@@ -69,16 +68,51 @@ object CLI:
       StdIn.readLine().trim
     }.toVector
 
-  /** Inizializza lo stato e distribuisce subito le carte. */
+  /** Inizializza lo stato e distribuisce le carte assicurando: nessun quartetto iniziale in nessuna mano. */
   private def initGame(numPlayers: Int, names: Vector[String]): Unit =
-    val shuffler = Shuffler.random
-    val deckObj = Dealing.initialDeckForPlayers(numPlayers, shuffler)
-    val deck = deckObj match
-      case ListDeck(cs) => cs
-    val st   = GameState.initial(players = numPlayers, playerNames = names, shuffled = deck)
-    gameState = Some(st)
+    val (stDealt, dealtEvents, deckSize) = fairInitialDeal(numPlayers, names)
+
+    gameState = Some(stDealt)
     println(s"Nuova partita con $numPlayers giocatori.")
-    println(s"Mazzo iniziale: ${deck.size} carte.")
-    println(s"Primo turno: ${st.nameOf(st.turn)}")
-    // Distribuzione iniziale
-    step(st, GameCommand.Deal)
+    println(s"Mazzo iniziale: $deckSize carte.")
+    println(s"Primo turno: ${stDealt.nameOf(stDealt.turn)}")
+
+    // Stampa la distribuzione accettata (una sola volta)
+    CLIPrinter.printEvents(dealtEvents, stDealt)
+    CLIPrinter.printStatus(stDealt)
+    CLIPrinter.printHand(stDealt)
+
+  /** Loop di deal: re-shuffle finché nessun giocatore ha 4 carte dello stesso rango dopo il deal. */
+  private def fairInitialDeal(numPlayers: Int, names: Vector[String]): (GameState, List[GameEvent], Int) =
+    val MaxAttempts = 100
+    var attempt = 0
+    var lastGood: Option[(GameState, List[GameEvent], Int)] = None
+
+    while attempt < MaxAttempts do
+      val shuffler = Shuffler.random
+      val deckObj  = Dealing.initialDeckForPlayers(numPlayers, shuffler)
+      val deck = deckObj match
+        case ListDeck(cs) => cs
+      val st0 = GameState.initial(players = numPlayers, playerNames = names, shuffled = deck)
+
+      Engine.step(st0, GameCommand.Deal) match
+        case Right((st1, evs)) =>
+          if !hasAnyQuartet(st1) then
+            return (st1, evs, deck.size)
+          else
+            // tieni traccia di un candidato (non usato se troviamo prima uno valido)
+            if lastGood.isEmpty then lastGood = Some((st1, evs, deck.size))
+        case Left(err) =>
+          // improbabile; riprova un altro shuffle
+          ()
+
+      attempt += 1
+
+    // Fallback: in pratica non ci si arriva, ma nel caso restituisci l'ultimo stato generato
+    lastGood.get
+
+  /** True se almeno un giocatore ha un quartetto in mano. */
+  private def hasAnyQuartet(st: GameState): Boolean =
+    st.hands.values.exists { h =>
+      h.cards.groupBy(_.rank).values.exists(_.size == 4)
+    }

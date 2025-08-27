@@ -29,12 +29,7 @@ object CLIPrinter:
     val byRank = hand.groupBy(_.rank).toSeq.sortBy(_._1.ordinal).map {
       case (r, cs) => s"$r:${cs.size}"
     }.mkString(", ")
-    //println(s"Giocatore ${st.nameOf(st.turn)} – carte per rango: $byRank")
     println(s"Giocatore ${st.nameOf(st.turn)} - carte per rango: $byRank")
-
-  /** Stampa lo stato della pila centrale */
-  def printPile(st: GameState): Unit =
-    println(s"Pila: ${st.pile.allCards.size} carte totali")
 
   /** Stampa la lista di eventi generati da una mossa (usa GameState per i nomi) */
   def printEvents(events: Seq[GameEvent], st: GameState): Unit =
@@ -53,15 +48,14 @@ object CLIPrinter:
         val esito = if truthful then "VERA" else "FALSA"
         println(s"Event: accusa di bluff da ${st.nameOf(by)} contro ${st.nameOf(against.player)} → dichiarazione $esito")
 
-      //case GameEvent.GameEnded(winner) =>
-      // println(s"🏆 Vince ${st.nameOf(winner)}!")
+      case GameEvent.GameEnded(winner) =>
+        println(s"🏆 Vince ${st.nameOf(winner)}!")
     }
 
   /** Parsing rank in italiano con alias (case-insensitive) */
   def parseRank(s: String): Either[String, Rank] =
     val norm = s.trim.toLowerCase
 
-    // alias utili (lettere, numeri e nomi italiani)
     val mapping: Map[String, Rank] = Map(
       "a" -> Rank.Asso, "asso" -> Rank.Asso,
       "k" -> Rank.King, "re" -> Rank.King, "king" -> Rank.King,
@@ -77,5 +71,4 @@ object CLIPrinter:
       "3" -> Rank.Tre,   "tre" -> Rank.Tre,
       "2" -> Rank.Due,   "due" -> Rank.Due
     )
-
     mapping.get(norm).toRight(s"Rank non riconosciuto: $s")
