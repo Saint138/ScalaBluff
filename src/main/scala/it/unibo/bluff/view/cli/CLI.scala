@@ -41,7 +41,7 @@ object CLI:
         println(s"Errore: $err")
       case Right((st2, events)) =>
         gameState = Some(st2)
-        // Stampa eventi e stato aggiornato (passo st2 per i nomi)
+        // Stampa eventi e stato aVggiornato (passo st2 per i nomi)
         CLIPrinter.printEvents(events, st2)
         CLIPrinter.printStatus(st2)
         // Mostra automaticamente la mano del giocatore di turno

@@ -52,6 +52,12 @@ object CLIPrinter:
         println(s"🏆 Vince ${st.nameOf(winner)}!")
     }
 
+  def printHelp(gameActive: Boolean): Unit =
+      val base = "Comandi: new | help | quit"
+      val extra = if gameActive then " | play <n1> <rank1> [<n2> <rank2> ...] | call | status" else ""
+      println(base + extra)
+
+
   /** Parsing rank in italiano con alias (case-insensitive) */
   def parseRank(s: String): Either[String, Rank] =
     val norm = s.trim.toLowerCase
