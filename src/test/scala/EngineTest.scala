@@ -46,13 +46,13 @@ final class EngineTest extends AnyFunSuite {
     val beforePile  = pileSize(st1)
 
     val (st2, evs) =
-      Engine.step(st1, GameCommand.Play(current, List(cardToPlay), Rank.Ace)).fold(err => fail(err), identity)
+      Engine.step(st1, GameCommand.Play(current, List(cardToPlay), Rank.Asso)).fold(err => fail(err), identity)
 
     assert(st2.hands(current).size == beforeHand - 1, "La carta giocata deve essere rimossa dalla mano")
     assert(pileSize(st2) == beforePile + 1, "La pila deve crescere di una carta")
     assert(st2.lastDeclaration.nonEmpty, "La dichiarazione deve essere salvata")
     assert(evs.exists {
-      case Engine.GameEvent.Played(p, r, cnt) => p == current && r == Rank.Ace && cnt == 1
+      case Engine.GameEvent.Played(p, r, cnt) => p == current && r == Rank.Asso && cnt == 1
       case _ => false
     })
   }
@@ -67,8 +67,8 @@ final class EngineTest extends AnyFunSuite {
     val p1 = st1.players.find(_ != p0).get
 
     // Bluff certo: dichiara Ace ma gioca carta non-Ace
-    val notAce = st1.hands(p0).cards.find(_.rank != Rank.Ace).getOrElse(st1.hands(p0).cards.head)
-    val (st2, _) = Engine.step(st1, GameCommand.Play(p0, List(notAce), Rank.Ace)).fold(err => fail(err), identity)
+    val notAce = st1.hands(p0).cards.find(_.rank != Rank.Asso).getOrElse(st1.hands(p0).cards.head)
+    val (st2, _) = Engine.step(st1, GameCommand.Play(p0, List(notAce), Rank.Asso)).fold(err => fail(err), identity)
 
     val pileBefore = pileSize(st2)
     val (st3, evs) = Engine.step(st2, GameCommand.CallBluff(p1)).fold(err => fail(err), identity)
