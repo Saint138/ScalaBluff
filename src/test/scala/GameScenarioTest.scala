@@ -49,8 +49,8 @@ final class GameScenarioTest extends AnyFunSuite {
     val p0 = st1.turn
     val p1 = st1.players.find(_ != p0).get
 
-    val nonAce = st1.hands(p0).cards.find(_.rank != Rank.Ace).getOrElse(st1.hands(p0).cards.head)
-    val (st2, _) = GameEngine.applyCommand(st1, GameCommand.Play(p0, List(nonAce), Rank.Ace)).fold(err => fail(err), identity)
+    val nonAce = st1.hands(p0).cards.find(_.rank != Rank.Asso).getOrElse(st1.hands(p0).cards.head)
+    val (st2, _) = GameEngine.applyCommand(st1, GameCommand.Play(p0, List(nonAce), Rank.Asso)).fold(err => fail(err), identity)
 
     val pileBefore = pileSize(st2)
     val (st3, evs) = GameEngine.applyCommand(st2, GameCommand.CallBluff(p1)).fold(err => fail(err), identity)
