@@ -138,7 +138,6 @@ object Engine:
       .map(pid => s"Partita terminata: ha già vinto ${state.nameOf(pid)}") // <-- mappa PlayerId in String
       .toLeft(()) // Option[String] -> Either[String, Unit]
 
-
   /** Ritorna il vincitore se trova una mano a 0. */
   private def winnerIfAny(state: GameState): Option[PlayerId] =
     state.hands.collectFirst { case (pid, hand) if hand.size == 0 => pid }

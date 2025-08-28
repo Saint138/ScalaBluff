@@ -11,76 +11,59 @@ object CommandHandler:
   def execute(input: String, cli: CLI.type): Unit =
     input.split("\\s+").toList match
       case Nil | List("") => ()
-      case "quit" :: _ => cli.quit()
-      case "new" :: _ => cli.startNewGame()
-      case "help" :: _ =>  printHelp(cli.currentState.isDefined)
-      case other =>
+      case "quit" :: _    => cli.quit()
+      case "new"  :: _    => cli.startNewGame()
+      case "help" :: _    => CLIPrinter.printHelp(cli.currentState.isDefined)
+      case extra =>
         cli.currentState match
-          case None => println("Nessuna partita in corso. Usa il comando 'new' per avviarne una")
-          case Some(st) => other match
-            case "status" :: _ => CLIPrinter.printStatus(st)
-            case "hand" :: _   => CLIPrinter.printHand(st)
-            case "pile" :: _   => CLIPrinter.printPile(st)
-            case "call" :: _ => cli.step(st, GameCommand.CallBluff(st.turn))
-            case "play" :: str => handlePlayCommand(cli, st, str)
-            case _ =>
-              println(s"Comando sconosciuto o sintassi errata: $input")
+          case Some(state) =>
+            extra match
+              case "status" :: _      => CLIPrinter.printStatus(state)
+              case "call"   :: _      => cli.step(state, GameCommand.CallBluff(state.turn))
+              case "play"   :: tokens => handlePlay(cli, state, tokens)
+              case _ =>
+                println(s"Comando sconosciuto o sintassi errata: $input")
+          case None =>
+            println("Al momento non stai giocando. Usa 'new' per cominciare una nuova partita.")
 
-  private def printHelp(gameActive: Boolean): Unit =
-    val base = "Comandi: new | help | quit"
-    val extra = if gameActive then " | deal | play <cards> as <declRank> <n> | call | hand | pile | status" else ""
-    println(base + extra)
-
-  private def handlePlay(cli: CLI.type, st: GameState, rankStr: String, n: Int): Unit =
-    CLIPrinter.parseRank(rankStr) match
+  private def handlePlay(cli: CLI.type, st: GameState, token: List[String]): Unit =
+    parsePairs(token) match
       case Left(err) => println(err)
-      case Right(rank) =>
-        val me = st.turn
-        val hand = st.hands.getOrElse(me, Hand.empty).cards
-        val toPlay = hand.filter(_.rank == rank).take(n)
-        if toPlay.size != n then println(s"Non hai $n carte di rango $rank.")
-        else cli.step(st, GameCommand.Play(me, toPlay, rank))
+      case Right(Nil) => println("Devi specificare almeno una coppia <quantità rango>, es: play 2 asso")
+      case Right(pair) =>
+        val declared = st.fixedDeclaredRank.getOrElse(pair.head._2)
+        pickCardsByNeed(st, st.turn, pair) match
+          case Left(err) => println(err)
+          case Right(cards) => cli.step(st, Play(st.turn, cards, declared))
 
-  private def handlePlay(cli: CLI.type, st: GameState, cardsToPlayStr: List[String], declStr: String, n: Int): Unit =
-    val declaredRank = CLIPrinter.parseRank(declStr)
-    val cardsToplayRank = parseCards(cardsToPlayStr, st.turn, st)
-
-    (declaredRank, cardsToplayRank) match
-      case (Right(decl), Right(cardsToPlay)) =>
-        if cardsToPlay.size !=n then
-          println(s"Hai indicato ${cardsToPlay.size} carte ma dovevi giocarne $n")
-        else
-          cli.step(st, Play(st.turn, cardsToPlay, decl))
-      case (Left(err), _) => println(err)
-      case (_, Left(err)) => println(err)
-
-
-
-  private def handlePlayCommand(cli: CLI.type, st: GameState, tokens: List[String]): Unit =
-    val (cardsTokens, afterAs) = tokens.span(_ != "as")
-
-    afterAs match
-      case "as" :: declRank :: nStr :: Nil =>
-        val n = nStr.toIntOption.getOrElse(1)
-        handlePlay(cli, st, cardsTokens, declRank, n)
-      case _ =>
-        println("Sintassi errata. Uso: play <cards> as <declRank> <n>")
-
-  private def parseCards(tokens: List[String], turn: PlayerId, st: GameState): Either[String, List[Card]] =
-    val hand = st.hands.getOrElse(turn, Hand.empty).cards
-
-    val ranksE : Either[String, List[Rank]] =
-      tokens.foldLeft(Right(Nil): Either[String, List[Rank]]) { (acc, token) =>
-        acc.flatMap(lst => CLIPrinter.parseRank(token).map(r => lst :+ r))
-      }
-
-    ranksE.flatMap { ranks =>
-      val missing = ranks.diff(hand.map(_.rank))
-      if missing.nonEmpty then Left(s"Non possiedi le seguenti carte: ${missing.mkString(", ")}")
-      else
-        Right(ranks.map{ r=>
-          val idx =hand.indexWhere(_.rank == r)
-          hand(idx)
-        })
-
+  private def pickCardsByNeed(state: GameState, pid: PlayerId, pairs: List[(Int, Rank)]): Either[String, List[Card]] =
+    val hand = state.hands.getOrElse(pid, Hand.empty).cards
+    val groupedHand = hand.groupBy(_.rank)
+    val lacking = pairs.collect {
+      case (q, rk) if groupedHand.getOrElse(rk, Nil).size < q => s"$q x $rk"
     }
+    lacking match
+      case l if l.nonEmpty => Left(s"Non possiedi abbastanza carte per: ${l.mkString(", ")}")
+      case _               =>
+        val picked = pairs.flatMap { case (q, rk) => groupedHand(rk).take(q) }
+        Right(picked)
+
+  private def parsePairs(tokens: List[String]): Either[String, List[(Int, Rank)]] =
+    tokens match
+     case Nil => Right(Nil)
+     case _ if tokens.length % 2 != 0 =>
+        Left("Sintassi errata. Usa: play <n1> <rank1> [<n2> <rank2> ...]")
+     case _ =>
+      tokens.grouped(2).toList.map {
+        case List(qStr, rankStr) =>
+          qStr.toIntOption match {
+            case None => Left(s"Quantità non valida: $qStr")
+            case Some(q) if q <= 0 => Left(s"Quantità non valida: $qStr (deve essere > 0)")
+            case Some(q) =>
+              CLIPrinter.parseRank(rankStr).map(rk => (q, rk))
+          }
+      }.foldRight[Either[String, List[(Int, Rank)]]](Right(Nil)) {
+        case (Right(pair), Right(acc)) => Right(pair :: acc)
+        case (Left(err), _) => Left(err)
+        case (_, Left(err)) => Left(err)
+      }
