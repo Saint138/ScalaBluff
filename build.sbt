@@ -24,6 +24,7 @@ lazy val root = (project in file("."))
     // Opzioni compilatore Scala
     scalacOptions ++= Seq("-deprecation", "-feature"),
     Compile / run / fork := true,
+    Compile / run / connectInput := true,
     Compile / run / javaOptions += {
       val f = (baseDirectory.value / "logging.properties")
       s"-Djava.util.logging.config.file=${f.getAbsolutePath}"
