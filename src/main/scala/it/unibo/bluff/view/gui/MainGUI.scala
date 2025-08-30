@@ -25,4 +25,5 @@ object MainGUI extends JFXApp3:
           onRules = () => println("Mostra regole..."),
           onStats = () => println("Mostra statistiche...")
         )
-  stage.centerOnScreen()
+
+    stage.centerOnScreen()
