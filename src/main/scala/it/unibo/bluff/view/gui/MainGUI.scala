@@ -17,7 +17,7 @@ object MainGUI extends JFXApp3:
       height = 600
       scene = new Scene:
         content = MainMenuView(
-          onNew = () => {
+          onNewGame = () => {
             NewGameDialog.askPlayers().foreach { names =>
               val (stDealt, _events, _deckSize) = GameSetup.fairInitialDeal(names.size, names)
               val root = new BorderPane()
@@ -28,3 +28,4 @@ object MainGUI extends JFXApp3:
           onRules = () => println("Mostra regole..."),
           onStats = () => println("Mostra statistiche...")
         )
+    stage.centerOnScreen()
