@@ -13,6 +13,7 @@ object CommandHandler:
       case Nil | List("") => ()
       case "quit" :: _    => cli.quit()
       case "new"  :: _    => cli.startNewGame()
+      case "bot"  :: _    => cli.startNewGameVSBot()
       case "help" :: _    => CLIPrinter.printHelp(cli.currentState.isDefined)
       case extra =>
         cli.currentState match
