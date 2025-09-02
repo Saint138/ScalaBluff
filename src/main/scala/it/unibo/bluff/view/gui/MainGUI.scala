@@ -39,7 +39,8 @@ object MainGUI extends JFXApp3:
                   case Left(err) => println(s"Timeout ignored: $err")
                   case Right((newState, evs)) =>
                     stateRef.set(newState)
-                    println(s"TimerExpired for ${pid.value}, events: $evs")
+                    val playerName = stateRef.get().nameOf(pid)
+                    println(s"TimerExpired for $playerName")
               })
               timer.foreach(_.stop())
               timer = Some(t)
