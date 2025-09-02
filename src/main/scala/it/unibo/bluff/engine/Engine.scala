@@ -27,6 +27,8 @@ object Engine:
     final case class Play(player: PlayerId, cards: List[Card], declared: Rank) extends GameCommand
     /** Accusare l'ultima dichiarazione effettuata */
     final case class CallBluff(player: PlayerId) extends GameCommand
+    /** Indica che il timer del giocatore è scaduto o che si vuole forzare un timeout */
+    final case class Timeout(player: PlayerId) extends GameCommand
 
   // ===== Events (outputs for UI/logging) =====
   sealed trait GameEvent
@@ -34,6 +36,8 @@ object Engine:
     final case class Dealt(handsSize: Map[PlayerId, Int]) extends GameEvent
     final case class Played(player: PlayerId, declared: Rank, count: Int) extends GameEvent
     final case class BluffCalled(by: PlayerId, against: Declaration, truthful: Boolean) extends GameEvent
+    /** Evento emesso quando scade il tempo di un giocatore */
+    final case class TimerExpired(player: PlayerId) extends GameEvent
     // --- NEW: evento di fine partita
     final case class GameEnded(winner: PlayerId) extends GameEvent
 
@@ -48,6 +52,7 @@ object Engine:
         case Deal          => Right(deal(state))
         case p: Play       => play(state, p)
         case c: CallBluff  => call(state, c)
+        case t: Timeout    => timeout(state, t)
       (st2, evs) = res
       out = withWinEvent(st2, evs) // NEW: controlla vittoria dopo la mossa
     yield out
@@ -129,6 +134,29 @@ object Engine:
             fixedDeclaredRank = None
           )
           Right(st2 -> List(BluffCalled(cmd.player, decl, truthful)))
+
+  /** Gestione semplificata del timeout: se è il turno del player e il suo clock è 0, il giocatore prende la pila come penalità e il turno passa al next player. */
+  private def timeout(state: GameState, cmd: Timeout)(using TurnOrder): Either[String, (GameState, List[GameEvent])] =
+    val p = cmd.player
+    if state.turn != p then Left(s"Timeout di ${p.value} ma non è il suo turno")
+    else
+      val remaining = state.clocks.getOrElse(p, 0L)
+      if remaining > 0L then Left(s"Il timer non è ancora scaduto per ${p.value}: $remaining ms rimanenti")
+      else
+        // Penalità: il giocatore prende la pila
+        val pileCards = state.pile.allCards
+        val receiverHand = state.hands.getOrElse(p, Hand(Nil)).addAll(pileCards)
+        val newHands = state.hands.updated(p, receiverHand)
+        val (_, cleared) = state.pile.clear
+        val next = state.nextPlayer
+        val st2 = state.copy(
+          hands = newHands,
+          pile = cleared,
+          lastDeclaration = None,
+          turn = next,
+          fixedDeclaredRank = None
+        )
+        Right(st2 -> List(GameEvent.TimerExpired(p)))
 
   // ===== NEW: helpers per gestione fine partita =====
 

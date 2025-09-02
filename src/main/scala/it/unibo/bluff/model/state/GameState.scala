@@ -24,7 +24,9 @@ final case class GameState(
   pendingPenalty: Option[PlayerId],
   finished: Boolean,
   playersNames: Map[PlayerId, String],
-  fixedDeclaredRank: Option[Rank]
+  fixedDeclaredRank: Option[Rank],
+  /** Remaining time per player in milliseconds. Managed externally by a timer and used by game logic when timeout occurs. */
+  clocks: Map[PlayerId, Long]
 ):
   def nameOf(player: PlayerId): String = playersNames(player)
   def nextPlayer(using order: TurnOrder): PlayerId = order.next(players, turn)
@@ -37,6 +39,20 @@ final case class GameState(
       val remainingCards = leftoverDeck match
         case ListDeck(cs) => cs
       this.copy(hands = distributed, deck = remainingCards)
+
+  /** Initialize all players' clocks to the given millis. Returns a new state with clocks set. */
+  def withClocks(initialMillis: Long): GameState =
+    this.copy(clocks = players.map(_ -> initialMillis).toMap)
+
+  /** Decrease the clock of a player by deltaMillis (non-negative). Clocks floor at 0. */
+  def tickClock(player: PlayerId, deltaMillis: Long): GameState =
+    val old = clocks.getOrElse(player, 0L)
+    val next = math.max(0L, old - math.max(0L, deltaMillis))
+    this.copy(clocks = clocks.updated(player, next))
+
+  /** Set the clock for a specific player. */
+  def setClock(player: PlayerId, valueMillis: Long): GameState =
+    this.copy(clocks = clocks.updated(player, math.max(0L, valueMillis)))
 
 object GameState:
   def initial(players: Int,playerNames: Vector[String], shuffled: List[Card]): GameState =
@@ -52,5 +68,6 @@ object GameState:
       pendingPenalty = None,
       finished = false,
       playersNames = nameMap,
-      fixedDeclaredRank = None
+      fixedDeclaredRank = None,
+      clocks = ids.map(_ -> 0L).toMap
     )
