@@ -45,11 +45,10 @@ object GameView {
     val btnPlay = new Button("Gioca")
     val btnCall = new Button("Accusa Bluff")
 
-    def updateQtyChoices(max: Int): Unit = {
+    def updateQtyChoices(max: Int): Unit =
       val items = if (max <= 0) Seq(1) else 1 to max
       cmbQty.items = ObservableBuffer(items*)
       if (items.nonEmpty) cmbQty.value = items.head
-    }
 
     def updateUI(): Unit = {
       val st = currentState
@@ -73,15 +72,15 @@ object GameView {
       val elapsed = System.currentTimeMillis() - matchStart
       lblMatch.text = s"Partita: ${fmt(elapsed)}"
 
-      st.fixedDeclaredRank match {
+      st.fixedDeclaredRank match
         case Some(r) => cmbDeclared.value = r; cmbDeclared.disable = true
         case None =>
-          if (cmbDeclared.value.value == null) cmbDeclared.value = Rank.Asso
+          if Option(cmbDeclared.value.value).isEmpty then cmbDeclared.value = Rank.Asso
           cmbDeclared.disable = false
-      }
 
-      val hand    = st.hands.getOrElse(st.turn, Hand.empty).cards
-      val grouped = hand.groupBy(_.rank).view.mapValues(_.size).toMap
+      val hand = st.hands.getOrElse(st.turn, Hand.empty).cards
+      // avoid deprecated view.mapValues by mapping to rank -> size directly
+      val grouped = hand.groupBy(_.rank).map { case (k, v) => k -> v.size }
       cmbRankHand.items = ObservableBuffer(grouped.keys.toSeq.sortBy(_.ordinal)*)
       if (cmbRankHand.items().nonEmpty) {
         val cur = Option(cmbRankHand.value.value).getOrElse(cmbRankHand.items().head)
@@ -94,7 +93,7 @@ object GameView {
       btnCall.disable = gameOver || st.lastDeclaration.isEmpty
     }
 
-    def step(cmd: GameCommand): Unit =
+    def step(cmd: GameCommand): Unit = {
       val st = currentState
       Engine.step(st, cmd) match {
         case Left(err) =>
@@ -103,7 +102,7 @@ object GameView {
           stateRef.set(st2)
           evs.foreach {
             case Engine.GameEvent.Dealt(sz) =>
-              log.appendText("Distribuite carte: " + sz.map{ case (p,s) => s"${st2.nameOf(p)}=$s" }.mkString(", ") + "\n")
+              log.appendText("Distribuite carte: " + sz.map { case (p, s) => s"${st2.nameOf(p)}=$s" }.mkString(", ") + "\n")
             case Engine.GameEvent.Played(p, d, c) =>
               log.appendText(s"${st2.nameOf(p)} dichiara $d e gioca $c carte\n")
             case Engine.GameEvent.BluffCalled(by, ag, truth) =>
@@ -115,10 +114,11 @@ object GameView {
           }
           updateUI()
       }
+    }
 
     cmbRankHand.valueProperty.onChange { (_,_,r) =>
-      if (r != null) {
-        val count = currentState.hands.getOrElse(currentState.turn, Hand.empty).cards.count(_.rank == r)
+      Option(r).foreach { rank =>
+        val count = currentState.hands.getOrElse(currentState.turn, Hand.empty).cards.count(_.rank == rank)
         updateQtyChoices(count)
       }
     }
@@ -126,9 +126,9 @@ object GameView {
     btnPlay.onAction = _ => {
       val st = currentState
       val rHand = cmbRankHand.value.value
-      if (rHand != null) {
+      Option(rHand).foreach { rh =>
         val qty   = Option(cmbQty.value.value).getOrElse(1)
-        val cards = st.hands.getOrElse(st.turn, Hand.empty).cards.filter(_.rank == rHand).take(qty)
+        val cards = st.hands.getOrElse(st.turn, Hand.empty).cards.filter(_.rank == rh).take(qty)
         val decl  = Option(st.fixedDeclaredRank).flatten.getOrElse(cmbDeclared.value.value)
         step(GameCommand.Play(st.turn, cards, decl))
       }
@@ -146,12 +146,12 @@ object GameView {
     val playPane = new TitledPane { text = "Giocata"; content = playGrid; collapsible = false }
     val logPane  = new TitledPane { text = "Log";     content = log;      collapsible = false }
 
-  // top: left = game info, right = match timer
-  val leftCol = new VBox(6, lblTurn, lblPile, lblDecl) { padding = Insets(10) }
-  val rightCol = new VBox(lblMatch) { alignment = Pos.TopRight; padding = Insets(10) }
-  val spacer = new Region()
-  HBox.setHgrow(spacer, Priority.Always)
-  top = new HBox(10, leftCol, spacer, new VBox(8, new HBox(8, lblClock, clockBar), rightCol))
+    // top: left = game info, right = match timer
+    val leftCol = new VBox(6, lblTurn, lblPile, lblDecl) { padding = Insets(10) }
+    val rightCol = new VBox(lblMatch) { alignment = Pos.TopRight; padding = Insets(10) }
+    val spacer = new Region()
+    HBox.setHgrow(spacer, Priority.Always)
+    top = new HBox(10, leftCol, spacer, new VBox(8, new HBox(8, lblClock, clockBar), rightCol))
     center = new VBox(10, playPane, new HBox(10, btnCall), logPane) { padding = Insets(10) }
 
     // Timeline che aggiorna la UI ogni 200ms per riflettere il countdown

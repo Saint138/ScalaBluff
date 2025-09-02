@@ -55,14 +55,16 @@ object CommandHandler:
      case _ if tokens.length % 2 != 0 =>
         Left("Sintassi errata. Usa: play <n1> <rank1> [<n2> <rank2> ...]")
      case _ =>
-      tokens.grouped(2).toList.map {
-        case List(qStr, rankStr) =>
+      tokens.grouped(2).toList.map { g =>
+        if (g.size == 2) {
+          val qStr = g(0)
+          val rankStr = g(1)
           qStr.toIntOption match {
             case None => Left(s"Quantità non valida: $qStr")
             case Some(q) if q <= 0 => Left(s"Quantità non valida: $qStr (deve essere > 0)")
-            case Some(q) =>
-              CLIPrinter.parseRank(rankStr).map(rk => (q, rk))
+            case Some(q) => CLIPrinter.parseRank(rankStr).map(rk => (q, rk))
           }
+        } else Left(s"Errore interno nel parsing dei token: ${g.mkString(" ")}")
       }.foldRight[Either[String, List[(Int, Rank)]]](Right(Nil)) {
         case (Right(pair), Right(acc)) => Right(pair :: acc)
         case (Left(err), _) => Left(err)
