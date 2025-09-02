@@ -1,56 +1,77 @@
 package it.unibo.bluff.view.cli
 
+import it.unibo.bluff.controller.GameController
 import it.unibo.bluff.engine.Engine
 import it.unibo.bluff.engine.Engine.{GameCommand, GameEvent}
 import it.unibo.bluff.model.*
 import it.unibo.bluff.model.state.GameState
-
+import it.unibo.bluff.model.bot.RandomBot
 import scala.io.StdIn
 
 object CLI:
-  private var gameState: Option[GameState] = None
-  def state: Option[GameState] = gameState
-
+  private val controller = new GameController()
   private var running = false
 
-  /** Avvia il REPL principale (menu iniziale) */
   def repl(): Unit =
     running = true
-    println("Comandi: new | help | quit")
+    println("Comandi: new | bot | help | quit")
     while running do
       print("> ")
       val line = Option(StdIn.readLine()).getOrElse("")
       CommandHandler.execute(line.trim, this)
+      // se è il turno del bot, facciamo giocare il bot automaticamente
+      controller.botTurn() match
+        case Right(events) if events.nonEmpty =>
+          events.foreach(ev => CLIPrinter.printEvents(List(ev), controller.currentState.get))
+          controller.currentState.foreach(CLIPrinter.printStatus)
+          controller.currentState.foreach(CLIPrinter.printHand)
+        case Left(err) => println(s"Errore bot: $err")
+        case _ => ()
 
-  /** Chiude il REPL */
-  def quit(): Unit = running = false
+  def quit(): Unit =
+    running = false
+    println("Arrivederci!")
 
-  /** Espone lo stato corrente (per CommandHandler) */
-  def currentState: Option[GameState] = gameState
+  def currentState: Option[GameState] = controller.currentState
 
-  /** Avvia una nuova partita con input su numero giocatori e nomi */
   def startNewGame(): Unit =
     val numPlayers = promptPlayersCount()
-    val names      = promptPlayersName(numPlayers)
-    initGame(numPlayers, names)
+    val names = promptPlayersName(numPlayers)
+    val deck = Dealing.initialDeckForPlayers(numPlayers, Shuffler.random) match
+      case ListDeck(cs) => cs
+    controller.newGame(numPlayers, names, deck) match
+      case Right(evs) =>
+        println("Nuova partita iniziata!")
+        controller.currentState.foreach { st =>
+          CLIPrinter.printEvents(evs, st)
+          CLIPrinter.printStatus(st)
+          CLIPrinter.printHand(st)
+        }
+      case Left(err) => println(s"Errore: $err")
+
+  def startNewGameVSBot(): Unit =
+    controller.newGameVSBot() match
+      case Right(evs) =>
+        println("Nuova partita contro il Bot!")
+        controller.currentState.foreach { st =>
+          CLIPrinter.printEvents(evs, st)
+          CLIPrinter.printStatus(st)
+          CLIPrinter.printHand(st)
+        }
+      case Left(err) => println(s"Errore: $err")
+
 
   /** Esegue un passo dell'engine e gestisce eventi/stato/fine partita */
   def step(state: GameState, cmd: GameCommand): Unit =
-    Engine.step(state, cmd) match
-      case Left(err) =>
-        println(s"Errore: $err")
-      case Right((st2, events)) =>
-        gameState = Some(st2)
-        // Stampa eventi e stato aVggiornato (passo st2 per i nomi)
-        CLIPrinter.printEvents(events, st2)
-        CLIPrinter.printStatus(st2)
-        // Mostra automaticamente la mano del giocatore di turno
-        CLIPrinter.printHand(st2)
+    controller.handleCommand(cmd) match
+      case Left(err) => println(s"Errore: $err")
+      case Right(events) =>
+        controller.currentState.foreach { st =>
+          CLIPrinter.printEvents(events, st)
+          CLIPrinter.printStatus(st)
+          CLIPrinter.printHand(st)
+        }
 
-        // Se vuoi chiudere il REPL a fine partita, decommenta:
-        // if events.exists(_.isInstanceOf[GameEvent.GameEnded]) then
-        //   println("🏁 Partita terminata. Digita 'new' per iniziare una nuova partita o 'quit' per uscire.")
-        //   running = false
 
   // -------------------- Helpers interni --------------------
 
@@ -68,21 +89,18 @@ object CLI:
       StdIn.readLine().trim
     }.toVector
 
-  /** Inizializza lo stato e distribuisce le carte assicurando: nessun quartetto iniziale in nessuna mano. */
+  /** Inizializza lo stato e distribuisce le carte */
   private def initGame(numPlayers: Int, names: Vector[String]): Unit =
     val (stDealt, dealtEvents, deckSize) = fairInitialDeal(numPlayers, names)
-
-    gameState = Some(stDealt)
+    controller.setGameState(stDealt)
     println(s"Nuova partita con $numPlayers giocatori.")
     println(s"Mazzo iniziale: $deckSize carte.")
     println(s"Primo turno: ${stDealt.nameOf(stDealt.turn)}")
-
-    // Stampa la distribuzione accettata (una sola volta)
     CLIPrinter.printEvents(dealtEvents, stDealt)
     CLIPrinter.printStatus(stDealt)
     CLIPrinter.printHand(stDealt)
 
-  /** Loop di deal: re-shuffle finché nessun giocatore ha 4 carte dello stesso rango dopo il deal. */
+  /** Loop di deal: re-shuffle finché nessun giocatore ha 4 carte dello stesso rango */
   private def fairInitialDeal(numPlayers: Int, names: Vector[String]): (GameState, List[GameEvent], Int) =
     val MaxAttempts = 100
     var attempt = 0
@@ -92,26 +110,17 @@ object CLI:
       val shuffler = Shuffler.random
       val deckObj  = Dealing.initialDeckForPlayers(numPlayers, shuffler)
       val deck = deckObj match
-        case ListDeck(cs) => cs
+           case ListDeck(cs) => cs
       val st0 = GameState.initial(players = numPlayers, playerNames = names, shuffled = deck)
-
       Engine.step(st0, GameCommand.Deal) match
         case Right((st1, evs)) =>
-          if !hasAnyQuartet(st1) then
-            return (st1, evs, deck.size)
-          else
-            // tieni traccia di un candidato (non usato se troviamo prima uno valido)
-            if lastGood.isEmpty then lastGood = Some((st1, evs, deck.size))
-        case Left(err) =>
-          // improbabile; riprova un altro shuffle
-          ()
-
+          if !hasAnyQuartet(st1) then return (st1, evs, deck.size)
+          else if lastGood.isEmpty then lastGood = Some((st1, evs, deck.size))
+        case Left(_) => ()
       attempt += 1
 
-    // Fallback: in pratica non ci si arriva, ma nel caso restituisci l'ultimo stato generato
     lastGood.get
 
-  /** True se almeno un giocatore ha un quartetto in mano. */
   private def hasAnyQuartet(st: GameState): Boolean =
     st.hands.values.exists { h =>
       h.cards.groupBy(_.rank).values.exists(_.size == 4)
