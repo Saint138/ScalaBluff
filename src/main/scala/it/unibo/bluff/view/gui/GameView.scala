@@ -12,6 +12,9 @@ import scalafx.Includes.*
 import scalafx.collections.ObservableBuffer
 import scalafx.scene.control.*
 import scalafx.scene.layout.*
+import scalafx.scene.layout.Priority
+import scalafx.scene.layout.Region
+import scalafx.geometry.Pos
 import scalafx.geometry.Insets
 import scalafx.animation.{Timeline, KeyFrame}
 import scalafx.util.Duration
@@ -30,6 +33,9 @@ object GameView {
     val lblDecl = new Label()
     val lblClock = new Label()
     val clockBar = new ProgressBar { prefWidth = 200 }
+    // match timer (top-right)
+    val lblMatch = new Label()
+    val matchStart = System.currentTimeMillis()
     val log     = new TextArea { editable = false; prefRowCount = 8 }
 
     val cmbDeclared = new ComboBox[Rank](ObservableBuffer(Rank.values.toSeq*))
@@ -57,6 +63,15 @@ object GameView {
       lblClock.text = f"Tempo rimasto: ${remaining / 1000.0}%.1f s"
       val frac = if (maxPerTurnMs > 0) remaining.toDouble / maxPerTurnMs.toDouble else 0.0
       clockBar.progress = math.max(0.0, math.min(1.0, frac))
+
+      // aggiorna timer partita (mm:ss)
+      def fmt(ms: Long): String =
+        val totalSec = ms / 1000
+        val mm = totalSec / 60
+        val ss = totalSec % 60
+        f"$mm%02d:$ss%02d"
+      val elapsed = System.currentTimeMillis() - matchStart
+      lblMatch.text = s"Partita: ${fmt(elapsed)}"
 
       st.fixedDeclaredRank match {
         case Some(r) => cmbDeclared.value = r; cmbDeclared.disable = true
@@ -97,7 +112,6 @@ object GameView {
               log.appendText(s"Timeout: ${st2.nameOf(p)} ha perso tempo e prende la pila\n")
             case Engine.GameEvent.GameEnded(w) =>
               log.appendText(s"🏆 Vince ${st2.nameOf(w)}!\n")
-            case _ => // altri eventi futuri
           }
           updateUI()
       }
@@ -132,7 +146,12 @@ object GameView {
     val playPane = new TitledPane { text = "Giocata"; content = playGrid; collapsible = false }
     val logPane  = new TitledPane { text = "Log";     content = log;      collapsible = false }
 
-    top    = new VBox(6, lblTurn, lblPile, lblDecl, new HBox(8, lblClock, clockBar)) { padding = Insets(10) }
+  // top: left = game info, right = match timer
+  val leftCol = new VBox(6, lblTurn, lblPile, lblDecl) { padding = Insets(10) }
+  val rightCol = new VBox(lblMatch) { alignment = Pos.TopRight; padding = Insets(10) }
+  val spacer = new Region()
+  HBox.setHgrow(spacer, Priority.Always)
+  top = new HBox(10, leftCol, spacer, new VBox(8, new HBox(8, lblClock, clockBar), rightCol))
     center = new VBox(10, playPane, new HBox(10, btnCall), logPane) { padding = Insets(10) }
 
     // Timeline che aggiorna la UI ogni 200ms per riflettere il countdown
