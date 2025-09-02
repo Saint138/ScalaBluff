@@ -10,10 +10,8 @@ import scala.util.Random
 
 class RandomBot(val id: PlayerId):
   private val rng = new Random()
-
-  /** Giocata principale: può decidere se giocare carte o chiamare bluff */
+  
   def decideMove(state: GameState): GameCommand =
-    // 20% di probabilità di chiamare bluff se possibile
     if rng.nextDouble() < 0.4 && canCallBluff(state) then
       callBluff(state)
     else
