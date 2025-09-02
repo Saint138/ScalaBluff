@@ -8,7 +8,7 @@ import it.unibo.bluff.timer.GameTimer
 import it.unibo.bluff.engine.Engine
 import it.unibo.bluff.engine.Engine.GameCommand
 import it.unibo.bluff.model.TurnOrder.given
-import it.unibo.bluff.model.state.GameState
+import it.unibo.bluff.model.state.{GameState, GameClocks}
 import scalafx.application.JFXApp3
 import scalafx.scene.Scene
 import scalafx.scene.layout.BorderPane
@@ -29,10 +29,8 @@ object MainGUI extends JFXApp3:
           onNewGame = () =>
             NewGameDialog.askPlayers().foreach { names =>
               val (stDealt, _, _) = GameSetup.fairInitialDeal(names.size, names)
-              // inizializza clocks con 60_000 ms per giocatore
-              val stWithClocks = stDealt.withClocks(60_000L)
+              val stWithClocks = GameClocks.withClocks(stDealt, 60_000L)
               stateRef.set(stWithClocks)
-              // crea e avvia timer
               val t = new GameTimer(stateRef, tickMillis = 200L, onTimeout = { pid =>
                 given it.unibo.bluff.model.TurnOrder = summon[ it.unibo.bluff.model.TurnOrder ]
                 Engine.step(stateRef.get(), GameCommand.Timeout(pid)) match

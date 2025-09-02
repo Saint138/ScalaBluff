@@ -40,19 +40,7 @@ final case class GameState(
         case ListDeck(cs) => cs
       this.copy(hands = distributed, deck = remainingCards)
 
-  /** Initialize all players' clocks to the given millis. Returns a new state with clocks set. */
-  def withClocks(initialMillis: Long): GameState =
-    this.copy(clocks = players.map(_ -> initialMillis).toMap)
-
-  /** Decrease the clock of a player by deltaMillis (non-negative). Clocks floor at 0. */
-  def tickClock(player: PlayerId, deltaMillis: Long): GameState =
-    val old = clocks.getOrElse(player, 0L)
-    val next = math.max(0L, old - math.max(0L, deltaMillis))
-    this.copy(clocks = clocks.updated(player, next))
-
-  /** Set the clock for a specific player. */
-  def setClock(player: PlayerId, valueMillis: Long): GameState =
-    this.copy(clocks = clocks.updated(player, math.max(0L, valueMillis)))
+  // Clock operations moved to GameClocks helper to keep GameState focused on data
 
 object GameState:
   def initial(players: Int,playerNames: Vector[String], shuffled: List[Card]): GameState =

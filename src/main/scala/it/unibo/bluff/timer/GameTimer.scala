@@ -3,7 +3,7 @@ package it.unibo.bluff.timer
 import java.util.concurrent.{ScheduledExecutorService, Executors, TimeUnit}
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicReference
-import it.unibo.bluff.model.state.GameState
+import it.unibo.bluff.model.state.{GameState, GameClocks}
 import it.unibo.bluff.model.PlayerId
 
 /**
@@ -25,23 +25,25 @@ class GameTimer(
 
   private val task = new Runnable {
     override def run(): Unit =
-      try
+      try {
         val old = stateRef.get()
         val current = old.turn
         val prevRem = old.clocks.getOrElse(current, 0L)
         // decrementa solo se > 0
-        val ticked = if prevRem > 0L then old.tickClock(current, tickMillis) else old
+        val ticked = if (prevRem > 0L) GameClocks.tickClock(old, current, tickMillis) else old
         stateRef.set(ticked)
         val afterRem = ticked.clocks.getOrElse(current, 0L)
 
         val last = lastRemaining.getOrElse(current, Long.MaxValue)
-        if afterRem <= 0L && last > 0L then
+        if (afterRem <= 0L && last > 0L) {
           // transizione da >0 a <=0: notifica timeout
           onTimeout(current)
+        }
 
         lastRemaining = lastRemaining.updated(current, afterRem)
-      catch
+      } catch {
         case t: Throwable => t.printStackTrace()
+      }
   }
 
   def start(): Unit =
