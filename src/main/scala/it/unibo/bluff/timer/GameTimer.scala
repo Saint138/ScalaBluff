@@ -16,30 +16,36 @@ import it.unibo.bluff.model.PlayerId
 class GameTimer(
   stateRef: AtomicReference[GameState],
   tickMillis: Long = 200L,
+  perTurnMillis: Long = 60000L,
   scheduler: ScheduledExecutorService = Executors.newSingleThreadScheduledExecutor(),
   onTimeout: PlayerId => Unit // callback eseguita quando un player's clock scade
 ) {
   private val running = new AtomicBoolean(false)
   // manteniamo l'ultimo valore rimasto per ciascun giocatore per evitare ripetute notifiche
   private var lastRemaining: Map[PlayerId, Long] = Map.empty
+  // ricordiamo l'ultimo giocatore di cui abbiamo visto il turno per resettare il clock al cambio di turno
+  private var lastTurn: Option[PlayerId] = None
 
   private val task = new Runnable {
     override def run(): Unit =
       try {
         val old = stateRef.get()
         val current = old.turn
-        val prevRem = old.clocks.getOrElse(current, 0L)
-        // decrementa solo se > 0
-        val ticked = if (prevRem > 0L) GameClocks.tickClock(old, current, tickMillis) else old
+        val withReset = lastTurn match
+          case Some(prev) if prev == current => old
+          case _ =>
+            val r = GameClocks.setClock(old, current, perTurnMillis)
+            r
+        lastTurn = Some(current)
+        val prevRem = withReset.clocks.getOrElse(current, 0L)
+        val ticked = if (prevRem > 0L) GameClocks.tickClock(withReset, current, tickMillis) else withReset
         stateRef.set(ticked)
         val afterRem = ticked.clocks.getOrElse(current, 0L)
 
         val last = lastRemaining.getOrElse(current, Long.MaxValue)
         if (afterRem <= 0L && last > 0L) {
-          // transizione da >0 a <=0: notifica timeout
           onTimeout(current)
         }
-
         lastRemaining = lastRemaining.updated(current, afterRem)
       } catch {
         case t: Throwable => t.printStackTrace()
