@@ -200,28 +200,20 @@ object GameView {
         onMouseClicked = _ => toggleSelect(this)
       }
 
+
       private def toggleSelect(n: CardNode): Unit = {
         val c = n.card
-        if selected.contains(c) then {
-          selected.remove(c); n.markSelected(false)
-        } else {
-          if selected.isEmpty then {
-            selected.add(c); n.markSelected(true)
-            if st.fixedDeclaredRank.isEmpty && cmbDeclared.value.value == null then cmbDeclared.value = c.rank
-          } else {
-            val r0 = selected.head.rank
-            if c.rank == r0 && selected.size < 4 then {
-              selected.add(c); n.markSelected(true)
-            } else {
-              // rango diverso → reset e nuova selezione
-              resetSelection()
-              selected.add(c); n.markSelected(true)
-              if st.fixedDeclaredRank.isEmpty then cmbDeclared.value = c.rank
-            }
-          }
-        }
+        if (selected.contains(c)) {
+          selected.remove(c)
+          n.markSelected(false)
+        } else if (selected.size < 3) {
+          selected.add(c)
+          n.markSelected(true)
+        } 
         updateButtonsEnabled()
       }
+
+
 
       private def renderHand(): Unit = {
         handPane.children.clear()

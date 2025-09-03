@@ -1,7 +1,6 @@
 package gui
 
 import java.util.concurrent.atomic.AtomicReference
-
 import it.unibo.bluff.view.gui.{MainMenuView, NewGameDialog, GameView}
 import it.unibo.bluff.setup.GameSetup
 import it.unibo.bluff.timer.GameTimer
@@ -15,6 +14,7 @@ import scalafx.scene.layout.BorderPane
 import scalafx.stage.StageStyle
 
 object MainGUI extends JFXApp3:
+
   private val stateRef = new AtomicReference[GameState]()
   private var timer: Option[GameTimer] = None
 
@@ -27,15 +27,20 @@ object MainGUI extends JFXApp3:
       scene = new Scene(width.value, height.value):
         root = MainMenuView(
           onNewGame = () =>
-            NewGameDialog.askPlayers().foreach { names =>
-              val (stDealt, _, _) = GameSetup.fairInitialDeal(names.size, names)
+            NewGameDialog.askPlayers().foreach { case (isSingle, names) =>
+              val playerNames =
+                if isSingle then names 
+                else names
+              val (stDealt, _, _) = GameSetup.fairInitialDeal(playerNames.size, playerNames)
               val stWithClocks = GameClocks.withClocks(stDealt, 60_000L)
               stateRef.set(stWithClocks)
+
+              // Timer per la partita
               val t = new GameTimer(stateRef, tickMillis = 200L, onTimeout = { pid =>
-                given it.unibo.bluff.model.TurnOrder = summon[ it.unibo.bluff.model.TurnOrder ]
+                given it.unibo.bluff.model.TurnOrder = summon[it.unibo.bluff.model.TurnOrder]
                 Engine.step(stateRef.get(), GameCommand.Timeout(pid)) match
                   case Left(err) => println(s"Timeout ignored: $err")
-                  case Right((newState, evs)) =>
+                  case Right((newState, _)) =>
                     stateRef.set(newState)
                     val playerName = stateRef.get().nameOf(pid)
                     println(s"TimerExpired for $playerName")
@@ -44,8 +49,9 @@ object MainGUI extends JFXApp3:
               timer = Some(t)
               t.start()
 
+              // Avvia la vista di gioco
               root = new BorderPane:
-                center = it.unibo.bluff.view.gui.GameView(stateRef)
+                center = GameView(stateRef)
             },
           onRules = () => println("Mostra regole..."),
           onStats = () => println("Mostra statistiche...")
