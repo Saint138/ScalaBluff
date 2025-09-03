@@ -9,156 +9,301 @@ import it.unibo.bluff.model.state.GameState
 import it.unibo.bluff.model.TurnOrder.given
 
 import scalafx.Includes.*
+import scalafx.animation.{KeyFrame, Timeline}
 import scalafx.collections.ObservableBuffer
+import scalafx.geometry.{Insets, Pos}
 import scalafx.scene.control.*
 import scalafx.scene.layout.*
-import scalafx.scene.layout.Priority
-import scalafx.scene.layout.Region
-import scalafx.geometry.Pos
-import scalafx.geometry.Insets
-import scalafx.animation.{Timeline, KeyFrame}
+import scalafx.scene.paint.Color
+import scalafx.scene.text.{Font, FontWeight}
 import scalafx.util.Duration
 
-/** Game view now reads from a shared AtomicReference[GameState] so the timer can update the clocks and the UI
-  * reflects the remaining time. It also shows a label and progress bar for the current player's remaining time.
-  */
+import scala.collection.mutable
+import scala.reflect.Selectable.reflectiveSelectable
+
 object GameView {
 
-  def apply(stateRef: AtomicReference[GameState], maxPerTurnMs: Long = 60000L): BorderPane = new BorderPane {
+  /** Vista principale del tavolo di gioco (stile mockup).
+    * @param stateRef stato condiviso (aggiornato da Engine.step)
+    * @param maxPerTurnMs tempo massimo per turno (progress bar)
+    */
+  def apply(stateRef: AtomicReference[GameState], maxPerTurnMs: Long = 60_000L): BorderPane =
+    new BorderPane {
 
-    def currentState: GameState = stateRef.get()
+      // ===== Helpers stato/UI =====
+      private def st: GameState = stateRef.get()
 
-    val lblTurn = new Label()
-    val lblPile = new Label()
-    val lblDecl = new Label()
-    val lblClock = new Label()
-    val clockBar = new ProgressBar { prefWidth = 200 }
-    // match timer (top-right)
-    val lblMatch = new Label()
-    val matchStart = System.currentTimeMillis()
-    val log     = new TextArea { editable = false; prefRowCount = 8 }
+      // selezione carte (max 4, stesso rango)
+      private val selected  = mutable.LinkedHashSet.empty[Card]
+      private val handNodes = mutable.Buffer.empty[CardNode]
 
-    val cmbDeclared = new ComboBox[Rank](ObservableBuffer(Rank.values.toSeq*))
-    val cmbRankHand = new ComboBox[Rank]()
-    val cmbQty      = new ComboBox[Int]()
+      private def clearSelectionVisual(): Unit =
+        handNodes.foreach(_.markSelected(false))
 
-    val btnPlay = new Button("Gioca")
-    val btnCall = new Button("Accusa Bluff")
-
-    def updateQtyChoices(max: Int): Unit =
-      val items = if (max <= 0) Seq(1) else 1 to max
-      cmbQty.items = ObservableBuffer(items*)
-      if (items.nonEmpty) cmbQty.value = items.head
-
-    def updateUI(): Unit = {
-      val st = currentState
-      lblTurn.text = s"Turno: ${st.nameOf(st.turn)}"
-      lblPile.text = s"Pila: ${st.pile.allCards.size} carte"
-      lblDecl.text = "Ultima dichiarazione: " + st.lastDeclaration
-        .map(d => s"${st.nameOf(d.player)} ${d.declared} (${d.hiddenCards.size})")
-        .getOrElse("-")
-
-      val remaining = st.clocks.getOrElse(st.turn, 0L)
-      lblClock.text = f"Tempo rimasto: ${remaining / 1000.0}%.1f s"
-      val frac = if (maxPerTurnMs > 0) remaining.toDouble / maxPerTurnMs.toDouble else 0.0
-      clockBar.progress = math.max(0.0, math.min(1.0, frac))
-
-      // aggiorna timer partita (mm:ss)
-      def fmt(ms: Long): String =
-        val totalSec = ms / 1000
-        val mm = totalSec / 60
-        val ss = totalSec % 60
-        f"$mm%02d:$ss%02d"
-      val elapsed = System.currentTimeMillis() - matchStart
-      lblMatch.text = s"Partita: ${fmt(elapsed)}"
-
-      st.fixedDeclaredRank match
-        case Some(r) => cmbDeclared.value = r; cmbDeclared.disable = true
-        case None =>
-          if Option(cmbDeclared.value.value).isEmpty then cmbDeclared.value = Rank.Asso
-          cmbDeclared.disable = false
-
-      val hand = st.hands.getOrElse(st.turn, Hand.empty).cards
-      // avoid deprecated view.mapValues by mapping to rank -> size directly
-      val grouped = hand.groupBy(_.rank).map { case (k, v) => k -> v.size }
-      cmbRankHand.items = ObservableBuffer(grouped.keys.toSeq.sortBy(_.ordinal)*)
-      if (cmbRankHand.items().nonEmpty) {
-        val cur = Option(cmbRankHand.value.value).getOrElse(cmbRankHand.items().head)
-        cmbRankHand.value = cur
-        updateQtyChoices(grouped(cur))
+      private def resetSelection(): Unit = {
+        selected.clear()
+        clearSelectionVisual()
+        updateButtonsEnabled()
       }
 
-      val gameOver = st.hands.exists(_._2.size == 0)
-      btnPlay.disable = gameOver || hand.isEmpty
-      btnCall.disable = gameOver || st.lastDeclaration.isEmpty
-    }
+      // ===== Top bar =====
+      private val appMark = new Region {
+        prefWidth = 16; prefHeight = 16
+        style = "-fx-background-color:#ef8354; -fx-background-radius:4;"
+      }
+      private val titleLbl = new Label("ScalaBluff") {
+        font = Font.font("Verdana", FontWeight.Bold, 28)
+        textFill = Color.web("#2d3142")
+        style = "-fx-effect: dropshadow(gaussian, #bfc0c0, 8, 0, 2, 2);"
+      }
+      private val lblTurn  = new Label() { font = Font.font("System", FontWeight.Bold, 14) }
+      private val lblPile  = new Label()
+      private val lblDecl  = new Label()
+      private val lblClock = new Label() { font = Font.font("System", FontWeight.Bold, 14) }
+      private val clockBar = new ProgressBar { prefWidth = 160 }
+      private val lblMatch = new Label()
 
-    def step(cmd: GameCommand): Unit = {
-      val st = currentState
-      Engine.step(st, cmd) match {
-        case Left(err) =>
-          new Alert(Alert.AlertType.Error) { headerText = "Mossa non valida"; contentText = err }.showAndWait()
-        case Right((st2, evs)) =>
-          stateRef.set(st2)
-          evs.foreach {
-            case Engine.GameEvent.Dealt(sz) =>
-              log.appendText("Distribuite carte: " + sz.map { case (p, s) => s"${st2.nameOf(p)}=$s" }.mkString(", ") + "\n")
-            case Engine.GameEvent.Played(p, d, c) =>
-              log.appendText(s"${st2.nameOf(p)} dichiara $d e gioca $c carte\n")
-            case Engine.GameEvent.BluffCalled(by, ag, truth) =>
-              log.appendText(s"${st2.nameOf(by)} accusa ${st2.nameOf(ag.player)} → " + (if truth then "VERA" else "FALSA") + "\n")
-            case Engine.GameEvent.TimerExpired(p) =>
-              log.appendText(s"Timeout: ${st2.nameOf(p)} ha perso tempo e prende la pila\n")
-            case Engine.GameEvent.GameEnded(w) =>
-              log.appendText(s"🏆 Vince ${st2.nameOf(w)}!\n")
+      private val leftTop  = new VBox(4,
+        new HBox(10, appMark, titleLbl) { alignment = Pos.CenterLeft },
+        lblTurn, lblPile, lblDecl
+      ) { alignment = Pos.CenterLeft }
+
+      private val rightTop = new VBox(6,
+        new HBox(10, lblClock, clockBar) { alignment = Pos.CenterRight },
+        new HBox(new Label("Partita:"), new Region { prefWidth = 8 }, lblMatch) { alignment = Pos.CenterRight }
+      ) { alignment = Pos.CenterRight }
+
+      top = new BorderPane {
+        padding = Insets(10, 16, 4, 16)
+        left  = leftTop
+        right = rightTop
+      }
+
+      // ===== Sezioni/pannelli riutilizzabili =====
+      private def section(title: String, content: Region): VBox =
+        new VBox(
+          new Label(title) {
+            font = Font.font("System", FontWeight.Bold, 14)
+            textFill = Color.web("#2d3142")
+          },
+          new StackPane {
+            padding = Insets(10)
+            children = content
+            style =
+              "-fx-background-color: white; -fx-background-radius:10; -fx-border-radius:10; -fx-border-color:#d7d7d7;"
           }
-          updateUI()
+        ) { spacing = 6 }
+
+      // ===== Pannello sinistro (mano su tavolo + log) =====
+      // Tavolo verde
+      private val tableFelt = new StackPane {
+        padding = Insets(12)
+        style = "-fx-background-color: #2e7d67; -fx-background-radius:10;"
       }
-    }
+      private val handPane = new FlowPane { hgap = 10; vgap = 10 }
 
-    cmbRankHand.valueProperty.onChange { (_,_,r) =>
-      Option(r).foreach { rank =>
-        val count = currentState.hands.getOrElse(currentState.turn, Hand.empty).cards.count(_.rank == rank)
-        updateQtyChoices(count)
+      tableFelt.children = handPane
+      private val handSection = section("Mano", tableFelt)
+
+      private val logArea = new TextArea {
+        editable = false
+        prefRowCount = 8
+        style = "-fx-font-size: 13;"
       }
-    }
+      private val logSection = section("Log", logArea)
 
-    btnPlay.onAction = _ => {
-      val st = currentState
-      val rHand = cmbRankHand.value.value
-      Option(rHand).foreach { rh =>
-        val qty   = Option(cmbQty.value.value).getOrElse(1)
-        val cards = st.hands.getOrElse(st.turn, Hand.empty).cards.filter(_.rank == rh).take(qty)
-        val decl  = Option(st.fixedDeclaredRank).flatten.getOrElse(cmbDeclared.value.value)
-        step(GameCommand.Play(st.turn, cards, decl))
+      private val leftColumn = new VBox(12, handSection, logSection) {
+        padding = Insets(10)
       }
+
+      // ===== Pannello destro (azioni) =====
+      private val cmbDeclared = new ComboBox[Rank](ObservableBuffer(Rank.values.toSeq*))
+
+      private val btnPlay = new Button("Gioca") {
+        prefWidth = 200; prefHeight = 40
+        style = "-fx-background-color:#ef8354; -fx-text-fill:white; -fx-font-weight:bold; -fx-font-size:14;"
+      }
+      private val btnCall = new Button("Accusa Bluff") {
+        prefWidth = 200; prefHeight = 40
+        style = "-fx-background-color:#4f5d75; -fx-text-fill:white; -fx-font-weight:bold; -fx-font-size:14;"
+      }
+      private val btnClear = new Button("Annulla selezione") {
+        prefWidth = 200
+      }
+
+      private val actionsPane = new VBox(12,
+        new VBox(6, new Label("Rango dichiarato:"), cmbDeclared),
+        btnPlay,
+        btnCall,
+        btnClear
+      ) {
+        alignment = Pos.TopCenter
+        padding = Insets(12)
+        style = "-fx-background-color:#f7f7f8; -fx-background-radius:10; -fx-border-radius:10; -fx-border-color:#e5e5e7;"
+      }
+
+      center = new HBox(16,
+        new VBox(leftColumn) { VBox.setVgrow(this, Priority.ALWAYS); HBox.setHgrow(this, Priority.ALWAYS) },
+        new VBox(actionsPane) { prefWidth = 260 }
+      ) { padding = Insets(10, 16, 10, 16) }
+
+      // ===== Carta cliccabile =====
+      private val baseStyle =
+        "-fx-background-color: white; -fx-background-radius:12; -fx-border-radius:12;" +
+          "-fx-border-color:#bfc0c0; -fx-effect:dropshadow(gaussian, rgba(0,0,0,0.10), 6, 0, 1, 1);"
+      private val selectedStyle =
+        "-fx-background-color: white; -fx-background-radius:12; -fx-border-radius:12;" +
+          "-fx-border-color:#ef8354; -fx-border-width:3; -fx-effect:dropshadow(gaussian, rgba(239,131,84,0.35), 10, 0, 0, 0);"
+
+      private def suitSymbol(s: Suit): String =
+        s.toString.toLowerCase match
+          case "cuori" | "hearts"   => "♥"
+          case "quadri" | "diamonds"=> "♦"
+          case "fiori"  | "clubs"   => "♣"
+          case "picche" | "spades"  => "♠"
+          case _                    => s.toString
+
+      private def suitColor(s: Suit): Color =
+        s.toString.toLowerCase match
+          case "cuori" | "hearts" | "quadri" | "diamonds" => Color.web("#ef8354")
+          case _                                          => Color.web("#2d3142")
+
+      final class CardNode(val card: Card) extends StackPane {
+        minWidth = 82;  prefWidth = 82;  maxWidth = 82
+        minHeight = 116; prefHeight = 116; maxHeight = 116
+        padding = Insets(8)
+        style = baseStyle
+
+        private val rankLbl = new Label(card.rank.toString.take(2)) {
+          font = Font.font("System", FontWeight.Bold, 18)
+          textFill = Color.web("#2d3142")
+        }
+        private val suitLbl = new Label(suitSymbol(card.suit)) {
+          font = Font.font("System", FontWeight.Bold, 16)
+          textFill = suitColor(card.suit)
+        }
+        children = new VBox(2, rankLbl, suitLbl) { alignment = Pos.Center }
+
+        def markSelected(on: Boolean): Unit =
+          style = if on then selectedStyle else baseStyle
+
+        onMouseClicked = _ => toggleSelect(this)
+      }
+
+      private def toggleSelect(n: CardNode): Unit = {
+        val c = n.card
+        if selected.contains(c) then {
+          selected.remove(c); n.markSelected(false)
+        } else {
+          if selected.isEmpty then {
+            selected.add(c); n.markSelected(true)
+            if st.fixedDeclaredRank.isEmpty && cmbDeclared.value.value == null then cmbDeclared.value = c.rank
+          } else {
+            val r0 = selected.head.rank
+            if c.rank == r0 && selected.size < 4 then {
+              selected.add(c); n.markSelected(true)
+            } else {
+              // rango diverso → reset e nuova selezione
+              resetSelection()
+              selected.add(c); n.markSelected(true)
+              if st.fixedDeclaredRank.isEmpty then cmbDeclared.value = c.rank
+            }
+          }
+        }
+        updateButtonsEnabled()
+      }
+
+      private def renderHand(): Unit = {
+        handPane.children.clear()
+        handNodes.clear()
+        val cards = st.hands.getOrElse(st.turn, Hand.empty).cards
+          .sortBy(c => (c.rank.ordinal, c.suit.ordinal))
+        cards.foreach { c =>
+          val node = new CardNode(c)
+          handNodes += node
+          handPane.children.add(node)
+        }
+        updateButtonsEnabled()
+      }
+
+      // ===== Update UI =====
+      private def fmtMs(ms: Long): String = f"${ms / 1000.0}%.1f s"
+      private val matchStart = System.currentTimeMillis()
+
+      private def updateHeader(): Unit = {
+        lblTurn.text = s"Turno: ${st.nameOf(st.turn)}"
+        lblPile.text = s"Pila: ${st.pile.allCards.size} carte"
+        lblDecl.text = st.lastDeclaration
+          .map(d => s"Ultima dichiarazione: ${st.nameOf(d.player)} → ${d.declared} (${d.hiddenCards.size})")
+          .getOrElse("Ultima dichiarazione: -")
+
+        // timer turno (se usi st.clocks: Map[PlayerId, Long])
+        val rem: Long =
+          try st.asInstanceOf[{ def clocks: Map[PlayerId, Long] }].clocks.getOrElse(st.turn, 0L)
+          catch { case _: Throwable => 0L }
+        lblClock.text = s"Tempo rimasto: ${fmtMs(rem)}"
+        clockBar.progress = if maxPerTurnMs > 0 then math.max(0.0, math.min(1.0, rem.toDouble / maxPerTurnMs)) else 0.0
+
+        val elapsed = System.currentTimeMillis() - matchStart
+        val totalSec = elapsed / 1000
+        lblMatch.text = f"${totalSec / 60}%02d:${totalSec % 60}%02d"
+
+        st.fixedDeclaredRank match
+          case Some(r) => cmbDeclared.value = r; cmbDeclared.disable = true
+          case None =>
+            if Option(cmbDeclared.value.value).isEmpty then cmbDeclared.value = Rank.Asso
+            cmbDeclared.disable = false
+      }
+
+      private def updateButtonsEnabled(): Unit = {
+        val handEmpty = st.hands.getOrElse(st.turn, Hand.empty).cards.isEmpty
+        val gameOver  = st.hands.exists(_._2.size == 0)
+        btnPlay.disable = gameOver || handEmpty || selected.isEmpty
+        btnCall.disable = gameOver || st.lastDeclaration.isEmpty
+      }
+
+      private def updateAll(): Unit = { updateHeader(); renderHand() }
+
+      // ===== Actions =====
+      btnPlay.onAction = _ => {
+        val decl = Option(st.fixedDeclaredRank).flatten.getOrElse(cmbDeclared.value.value)
+        val toPlay = selected.toList
+        if (toPlay.nonEmpty && decl != null) {
+          step(GameCommand.Play(st.turn, toPlay, decl))
+          resetSelection()
+        }
+      }
+      btnCall.onAction = _ => step(GameCommand.CallBluff(st.turn))
+      btnClear.onAction = _ => resetSelection()
+
+      private def step(cmd: GameCommand): Unit = {
+        Engine.step(st, cmd) match
+          case Left(err) =>
+            new Alert(Alert.AlertType.Error) { headerText = "Mossa non valida"; contentText = err }.showAndWait()
+          case Right((st2, evs)) =>
+            stateRef.set(st2)
+            evs.foreach {
+              case Engine.GameEvent.Dealt(sz) =>
+                logArea.appendText("Distribuite carte: " + sz.map { case (p, s) => s"${st2.nameOf(p)}=$s" }.mkString(", ") + "\n")
+              case Engine.GameEvent.Played(p, d, c) =>
+                logArea.appendText(s"${st2.nameOf(p)} dichiara $d e gioca $c carte\n")
+              case Engine.GameEvent.BluffCalled(by, ag, truth) =>
+                logArea.appendText(s"${st2.nameOf(by)} accusa ${st2.nameOf(ag.player)} → " + (if truth then "VERA" else "FALSA") + "\n")
+              case Engine.GameEvent.TimerExpired(p) =>
+                logArea.appendText(s"Timeout: ${st2.nameOf(p)} ha esaurito il tempo.\n")
+              case Engine.GameEvent.GameEnded(w) =>
+                logArea.appendText(s"🏆 Vince ${st2.nameOf(w)}!\n")
+              case _ => ()
+            }
+            updateAll()
+      }
+
+      // ===== Tick UI (no wall clock nell’engine) =====
+      private val uiTick = Timeline(KeyFrame(Duration(200), onFinished = _ => updateHeader()))
+      uiTick.cycleCount = Timeline.Indefinite
+      uiTick.play()
+
+      // init
+      updateAll()
     }
-
-    btnCall.onAction = _ => step(GameCommand.CallBluff(currentState.turn))
-
-    val playGrid = new GridPane {
-      hgap = 10; vgap = 8; padding = Insets(10)
-      add(new Label("Rango dichiarato:"), 0, 0); add(cmbDeclared, 1, 0)
-      add(new Label("Rango in mano:"),    0, 1); add(cmbRankHand, 1, 1)
-      add(new Label("Quantità:"),         0, 2); add(cmbQty,      1, 2)
-      add(btnPlay, 1, 3)
-    }
-    val playPane = new TitledPane { text = "Giocata"; content = playGrid; collapsible = false }
-    val logPane  = new TitledPane { text = "Log";     content = log;      collapsible = false }
-
-    // top: left = game info, right = match timer
-    val leftCol = new VBox(6, lblTurn, lblPile, lblDecl) { padding = Insets(10) }
-    val rightCol = new VBox(lblMatch) { alignment = Pos.TopRight; padding = Insets(10) }
-    val spacer = new Region()
-    HBox.setHgrow(spacer, Priority.Always)
-    top = new HBox(10, leftCol, spacer, new VBox(8, new HBox(8, lblClock, clockBar), rightCol))
-    center = new VBox(10, playPane, new HBox(10, btnCall), logPane) { padding = Insets(10) }
-
-    // Timeline che aggiorna la UI ogni 200ms per riflettere il countdown
-    val timeline = Timeline(KeyFrame(Duration(200), onFinished = _ => updateUI()))
-    timeline.cycleCount = Timeline.Indefinite
-    timeline.play()
-
-    updateUI()
-  }
 }
