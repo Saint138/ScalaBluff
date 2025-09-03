@@ -17,6 +17,8 @@ import scalafx.scene.layout.*
 import scalafx.scene.paint.Color
 import scalafx.scene.text.{Font, FontWeight}
 import scalafx.util.Duration
+import scalafx.scene.image.{Image, ImageView}
+
 
 import scala.collection.mutable
 import scala.reflect.Selectable.reflectiveSelectable
@@ -169,20 +171,28 @@ object GameView {
           case _                                          => Color.web("#2d3142")
 
       final class CardNode(val card: Card) extends StackPane {
-        minWidth = 82;  prefWidth = 82;  maxWidth = 82
+        minWidth = 82; prefWidth = 82; maxWidth = 82
         minHeight = 116; prefHeight = 116; maxHeight = 116
-        padding = Insets(8)
+        padding = Insets(4)
         style = baseStyle
 
-        private val rankLbl = new Label(card.rank.toString.take(2)) {
-          font = Font.font("System", FontWeight.Bold, 18)
-          textFill = Color.web("#2d3142")
-        }
-        private val suitLbl = new Label(suitSymbol(card.suit)) {
-          font = Font.font("System", FontWeight.Bold, 16)
-          textFill = suitColor(card.suit)
-        }
-        children = new VBox(2, rankLbl, suitLbl) { alignment = Pos.Center }
+        // Prova sempre a caricare l'immagine della carta
+        private val maybeUrl = Option(getClass.getResource(imagePath(card)))
+
+        children = maybeUrl match
+          case Some(url) =>
+            println(s"Carico immagine: ${imagePath(card)} → $url")
+            new ImageView(new Image(url.toExternalForm)) {
+              fitWidth = 72
+              fitHeight = 108
+              preserveRatio = true
+            }
+
+          case None =>
+            new Label(s"${card.rank} ${suitSymbol(card.suit)}") {
+              font = Font.font("System", FontWeight.Bold, 14)
+              textFill = suitColor(card.suit)
+            }
 
         def markSelected(on: Boolean): Unit =
           style = if on then selectedStyle else baseStyle
@@ -306,4 +316,11 @@ object GameView {
       // init
       updateAll()
     }
+
+
+  private def imagePath(card: Card): String =
+    val rankStr = card.rank.toString.toLowerCase // esempio: "asso", "due", "re"
+    val suitStr = card.suit.toString.toLowerCase // esempio: "cuori", "picche"
+    s"/cards/${rankStr}_${suitStr}.jpeg"
+
 }
