@@ -65,7 +65,7 @@ object MainGUI extends JFXApp3:
                 val bot = RandomBot(it.unibo.bluff.model.PlayerId(1))
                 botRunner.foreach(_.stop())
                 val cb: Option[String => Unit] = maybeTA.map(ta => (s: String) => scalafx.application.Platform.runLater { ta.appendText(if s.endsWith("\n") then s else s + "\n") })
-                val br = new BotRunner(stateRef, bot, logCb = cb)
+                val br = new BotRunner(stateRef, bot)
                 botRunner = Some(br)
                 br.start()
 

@@ -1,16 +1,18 @@
 package it.unibo.bluff.model.bot
 
-import java.util.concurrent.{ScheduledExecutorService, Executors, TimeUnit}
+import java.util.concurrent.{Executors, ScheduledExecutorService, TimeUnit}
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicReference}
 import it.unibo.bluff.model.state.GameState
+import it.unibo.bluff.engine.Engine
 import it.unibo.bluff.model.PlayerId
 
-/** BotRunner: periodically checks the shared stateRef and, when it's the bot's turn,
-  * uses BotManager to decide and apply a move, updating the shared stateRef.
-  */
-class BotRunner(stateRef: AtomicReference[GameState], bot: RandomBot, pollMillis: Long = 300L,
-                scheduler: ScheduledExecutorService = Executors.newSingleThreadScheduledExecutor(),
-                logCb: Option[String => Unit] = None) {
+/** BotRunner: controlla periodicamente lo stato e, se è il turno del bot, gioca una mossa. */
+class BotRunner(
+  stateRef: AtomicReference[GameState],
+  bot: RandomBot,
+  pollMillis: Long = 300L,
+  scheduler: ScheduledExecutorService = Executors.newSingleThreadScheduledExecutor()
+) {
   private val running = new AtomicBoolean(false)
   private var lastTurn: Option[PlayerId] = None
 
@@ -20,31 +22,23 @@ class BotRunner(stateRef: AtomicReference[GameState], bot: RandomBot, pollMillis
         val st = stateRef.get()
         if (st.turn == bot.id && lastTurn.forall(_ != bot.id)) {
           BotManager.takeTurn(bot, st) match {
-            case Left(err) =>
-              val s = s"Bot error: $err"
-              logCb.foreach(cb => cb(s)); if logCb.isEmpty then println(s)
+            case Left(_) =>
+              () // niente println qui: il log è gestito esclusivamente dalla GameView
             case Right((newSt, evs)) =>
               stateRef.set(newSt)
-              evs.foreach { ev =>
-                val s = s"Bot event: $ev"
-                logCb.foreach(cb => cb(s))
-                if logCb.isEmpty then println(s)
-              }
+              // inoltra gli eventi alla GUI (GameView è iscritta tramite BotManager.onEvents)
+              BotManager.onEvents(evs)
           }
         }
         lastTurn = Some(st.turn)
-      } catch {
-        case t: Throwable =>
-          val s = s"BotRunner error: ${t.getMessage}"
-          logCb.foreach(cb => cb(s)); if logCb.isEmpty then t.printStackTrace()
-      }
+      } catch { case _: Throwable => () }
   }
 
   def start(): Unit =
-    if running.compareAndSet(false, true) then
+    if (running.compareAndSet(false, true))
       scheduler.scheduleAtFixedRate(task, 0, pollMillis, TimeUnit.MILLISECONDS)
 
   def stop(): Unit =
-    if running.compareAndSet(true, false) then
+    if (running.compareAndSet(true, false))
       scheduler.shutdownNow()
 }
