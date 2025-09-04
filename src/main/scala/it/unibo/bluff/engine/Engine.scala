@@ -35,6 +35,8 @@ object Engine:
   object GameEvent:
     final case class Dealt(handsSize: Map[PlayerId, Int]) extends GameEvent
     final case class Played(player: PlayerId, declared: Rank, count: Int) extends GameEvent
+    /** Evento emesso quando una AI/bot gioca (utile per UI logging) */
+    final case class BotPlayed(player: PlayerId, declared: Rank, count: Int) extends GameEvent
     final case class BluffCalled(by: PlayerId, against: Declaration, truthful: Boolean) extends GameEvent
     /** Evento emesso quando scade il tempo di un giocatore */
     final case class TimerExpired(player: PlayerId) extends GameEvent
