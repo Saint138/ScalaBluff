@@ -60,7 +60,6 @@ object MainGUI extends JFXApp3:
                   case p: javafx.scene.Parent => findTA(p)
                   case _ => None
 
-              // se è una partita contro bot, avvia il BotRunner e passa la callback
               if isSingle then
                 val bot = RandomBot(it.unibo.bluff.model.PlayerId(1))
                 botRunner.foreach(_.stop())
@@ -68,7 +67,6 @@ object MainGUI extends JFXApp3:
                 val br = new BotRunner(stateRef, bot)
                 botRunner = Some(br)
                 br.start()
-
               // Timer per la partita
               val t = new GameTimer(stateRef, tickMillis = 200L, onTimeout = { pid =>
                 given it.unibo.bluff.model.TurnOrder = summon[it.unibo.bluff.model.TurnOrder]
@@ -82,7 +80,6 @@ object MainGUI extends JFXApp3:
               timer.foreach(_.stop())
               timer = Some(t)
               t.start()
-
               // Avvia la vista di gioco
               root = new BorderPane:
                 center = gamePane
@@ -90,5 +87,4 @@ object MainGUI extends JFXApp3:
           onRules = () => println("Mostra regole..."),
           onStats = () => println("Mostra statistiche...")
         )
-
     stage.centerOnScreen()
