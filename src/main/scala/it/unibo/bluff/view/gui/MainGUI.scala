@@ -11,30 +11,37 @@ import it.unibo.bluff.model.TurnOrder.given
 import it.unibo.bluff.model.state.{GameState, GameClocks}
 import it.unibo.bluff.model.*
 import it.unibo.bluff.model.stats.{MatchStats, PlayerStats, StatsUpdater}
+import it.unibo.bluff.model.bot.{RandomBot, BotRunner} // BOT
 
 import scalafx.application.JFXApp3
 import scalafx.scene.Scene
 import scalafx.scene.layout.BorderPane
 import scalafx.stage.StageStyle
 import scalafx.scene.control.{Alert, TextArea}
-import scalafx.Includes.*   // per stage.scene(), property helpers, ecc.
+import scalafx.Includes.*
 
+// =============================
+// Main GUI con due modalità chiare:
+// - startMultiplayer
+// - startVsBot
+// =============================
 object MainGUI extends JFXApp3:
 
-  // Stato condiviso con la View
+  // --- Stato condiviso / controller / timer ---
   private val stateRef = new AtomicReference[GameState]()
-  // Controller MVC
-  private val game = new GameController()
-  // Timer di turno
+  private val game     = new GameController()
   private var timer: Option[GameTimer] = None
 
-  // === Stato torneo ===
+  // --- Torneo ---
   private var tournamentRounds: Int = 1
   private var currentRound:    Int  = 1
   private var playerNames: Vector[String] = Vector.empty
   private var roundHandled: Boolean = false
   private var cumulativeStats: MatchStats = MatchStats(Map.empty)
 
+  // --- Modalità ---
+  private var vsBot: Boolean = false                 // TRUE => vs Bot, FALSE => Multiplayer
+  private var botRunner: Option[BotRunner] = None
   private def stopTimer(): Unit =
     timer.foreach(_.stop())
     timer = None
@@ -43,12 +50,40 @@ object MainGUI extends JFXApp3:
     stopTimer()
     val t = new GameTimer(stateRef, tickMillis = tickMs, onTimeout = { pid =>
       given it.unibo.bluff.model.TurnOrder = summon[it.unibo.bluff.model.TurnOrder]
-      dispatch(GameCommand.Timeout(pid)) // via controller, così aggiorniamo anche le stats
+      dispatch(GameCommand.Timeout(pid)) // via controller (statistiche incluse)
       checkRoundEnd()
     })
     timer = Some(t); t.start()
 
-  /** Dispatch centralizzato: passa sempre dal Controller. */
+  private def stopBot(): Unit =
+    botRunner.foreach(_.stop())
+    botRunner = None
+
+  /** Avvia il BotRunner se siamo in modalità vsBot (sincronizza anche il Controller). */
+  private def startBotIfNeeded(st: GameState): Unit =
+    stopBot()
+    if vsBot then
+      val botId =
+        st.players.find(pid => st.nameOf(pid).equalsIgnoreCase("bot"))
+          .getOrElse(st.players.last) // fallback: ultimo giocatore
+      val bot = RandomBot(botId)
+
+      // callback: allinea il Controller allo stato nuovo del bot PRIMA di aggiornare stateRef
+      val onNewState: GameState => Unit = s => {
+        game.setGameState(s)
+        game.currentState.foreach(stateRef.set)
+      }
+
+      val runner = new BotRunner(
+        stateRef   = stateRef,
+        bot        = bot,
+        pollMillis = 250L,
+        onNewState = onNewState
+      )
+      botRunner = Some(runner)
+      runner.start()
+
+
   private def dispatch(cmd: GameCommand) =
     val res = game.handleCommand(cmd)
     game.currentState.foreach(stateRef.set)
@@ -76,7 +111,6 @@ object MainGUI extends JFXApp3:
     }
     ("Classifica/Statistiche cumulative:\n" + lines.mkString("\n")).trim
 
-  /** Avvia (o riavvia) un round: fair deal, clocks, timer e view. */
   private def startRound(): Unit =
     roundHandled = false
 
@@ -86,9 +120,11 @@ object MainGUI extends JFXApp3:
     game.currentState.foreach(stateRef.set)
 
     startTimer(200L)
+    startBotIfNeeded(stWithClocks) // ⬅️ QUI parte il bot solo in modalità vsBot
 
+    val mode   = if vsBot then " – VS Bot" else " – Multiplayer"
     val suffix = if tournamentRounds > 1 then s" (Round $currentRound/$tournamentRounds)" else ""
-    stage.title = s"ScalaBluff$suffix"
+    stage.title = s"ScalaBluff$mode$suffix"
 
     stage.scene().root = new BorderPane:
       center = GameView(
@@ -122,6 +158,7 @@ object MainGUI extends JFXApp3:
           startRound()
         else
           stopTimer()
+          stopBot() // ⬅️ ferma il bot a fine torneo
           showStatsDialog("Torneo concluso", prettyCumulative(st, cumulativeStats))
           stage.scene().root = MainMenuView(
             onNewGame = () => onNewGame(),
@@ -130,19 +167,31 @@ object MainGUI extends JFXApp3:
           )
       }
     }
+  private def startMultiplayer(names: Vector[String], rounds: Int): Unit =
+    vsBot = false
+    playerNames      = names
+    tournamentRounds = rounds.max(1)
+    currentRound     = 1
+    cumulativeStats  = MatchStats.empty((0 until names.size).map(PlayerId.apply))
+    startRound()
 
-  /** Avvio nuovo gioco/torneo dal menu. */
+  private def startVsBot(names: Vector[String], rounds: Int): Unit =
+    vsBot = true
+    val normalized =
+      if names.exists(_.equalsIgnoreCase("Bot")) then names
+      else if names.size == 1 then names :+ "Bot"
+      else names.take(1) :+ "Bot"
+    playerNames      = normalized
+    tournamentRounds = rounds.max(1)
+    currentRound     = 1
+    cumulativeStats  = MatchStats.empty((0 until normalized.size).map(PlayerId.apply))
+    startRound()
+
   private def onNewGame(): Unit =
     NewGameDialog.askPlayers().foreach { case (isSingle, names, rounds) =>
-      playerNames = names
-      tournamentRounds = rounds.max(1)
-      currentRound = 1
-      cumulativeStats = MatchStats.empty((0 until names.size).map(PlayerId.apply))
-
-      // if playing against bot, ensure BotRunner is started by GameView or controller; here we just store players
-      startRound()
+      if isSingle then startVsBot(names, rounds)       // VS Bot
+      else            startMultiplayer(names, rounds)  // Multiplayer
     }
-
   override def start(): Unit =
     stage = new JFXApp3.PrimaryStage:
       initStyle(StageStyle.Decorated)
@@ -156,3 +205,7 @@ object MainGUI extends JFXApp3:
           onStats   = () => println("Mostra statistiche...")
         )
     stage.centerOnScreen()
+    stage.onCloseRequest = _ => {
+      stopTimer()
+      stopBot()
+    }
