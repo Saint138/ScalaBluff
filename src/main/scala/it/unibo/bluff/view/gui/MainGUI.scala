@@ -133,11 +133,13 @@ object MainGUI extends JFXApp3:
 
   /** Avvio nuovo gioco/torneo dal menu. */
   private def onNewGame(): Unit =
-    NewGameDialog.askPlayers().foreach { case (names, rounds) =>
+    NewGameDialog.askPlayers().foreach { case (isSingle, names, rounds) =>
       playerNames = names
       tournamentRounds = rounds.max(1)
       currentRound = 1
       cumulativeStats = MatchStats.empty((0 until names.size).map(PlayerId.apply))
+
+      // if playing against bot, ensure BotRunner is started by GameView or controller; here we just store players
       startRound()
     }
 
