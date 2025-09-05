@@ -5,7 +5,6 @@ import it.unibo.bluff.engine.Engine
 import it.unibo.bluff.engine.Engine.{GameCommand, GameEvent}
 import it.unibo.bluff.model.*
 import it.unibo.bluff.model.state.GameState
-import it.unibo.bluff.model.bot.RandomBot
 import scala.io.StdIn
 
 object CLI:
@@ -19,12 +18,14 @@ object CLI:
       print("> ")
       val line = Option(StdIn.readLine()).getOrElse("")
       CommandHandler.execute(line.trim, this)
-      // se è il turno del bot, facciamo giocare il bot automaticamente
+      // turno eventuale “bot” (attualmente no-op: GameController.botTurn => Right(Nil))
       controller.botTurn() match
         case Right(events) if events.nonEmpty =>
-          events.foreach(ev => CLIPrinter.printEvents(List(ev), controller.currentState.get))
-          controller.currentState.foreach(CLIPrinter.printStatus)
-          controller.currentState.foreach(CLIPrinter.printHand)
+          controller.currentState.foreach { st =>
+            CLIPrinter.printEvents(events, st)
+            CLIPrinter.printStatus(st)
+            CLIPrinter.printHand(st)
+          }
         case Left(err) => println(s"Errore bot: $err")
         case _ => ()
 
@@ -34,34 +35,32 @@ object CLI:
 
   def currentState: Option[GameState] = controller.currentState
 
+  // -------------------- Avvio partite --------------------
+
   def startNewGame(): Unit =
     val numPlayers = promptPlayersCount()
     val names = promptPlayersName(numPlayers)
-    val deck = Dealing.initialDeckForPlayers(numPlayers, Shuffler.random) match
-      case ListDeck(cs) => cs
-    controller.newGame(numPlayers, names, deck) match
-      case Right(evs) =>
-        println("Nuova partita iniziata!")
-        controller.currentState.foreach { st =>
-          CLIPrinter.printEvents(evs, st)
-          CLIPrinter.printStatus(st)
-          CLIPrinter.printHand(st)
-        }
-      case Left(err) => println(s"Errore: $err")
+    val (st, evs, deckSize) = fairInitialDeal(numPlayers, names)
+    controller.setGameState(st)
+    println(s"Nuova partita con $numPlayers giocatori.")
+    println(s"Mazzo iniziale: $deckSize carte.")
+    println(s"Primo turno: ${st.nameOf(st.turn)}")
+    CLIPrinter.printEvents(evs, st)
+    CLIPrinter.printStatus(st)
+    CLIPrinter.printHand(st)
 
   def startNewGameVSBot(): Unit =
-    controller.newGameVSBot() match
-      case Right(evs) =>
-        println("Nuova partita contro il Bot!")
-        controller.currentState.foreach { st =>
-          CLIPrinter.printEvents(evs, st)
-          CLIPrinter.printStatus(st)
-          CLIPrinter.printHand(st)
-        }
-      case Left(err) => println(s"Errore: $err")
+    // per ora: 2 giocatori "Human" e "Bot" (nessuna IA automatica lato CLI)
+    val (st, evs, deckSize) = fairInitialDeal(2, Vector("Human", "Bot"))
+    controller.setGameState(st)
+    println("Nuova partita contro il Bot!")
+    println(s"Mazzo iniziale: $deckSize carte.")
+    println(s"Primo turno: ${st.nameOf(st.turn)}")
+    CLIPrinter.printEvents(evs, st)
+    CLIPrinter.printStatus(st)
+    CLIPrinter.printHand(st)
 
-
-  /** Esegue un passo dell'engine e gestisce eventi/stato/fine partita */
+  /** Esegue un passo dell'engine tramite Controller e stampa effetti. */
   def step(state: GameState, cmd: GameCommand): Unit =
     controller.handleCommand(cmd) match
       case Left(err) => println(s"Errore: $err")
@@ -71,7 +70,6 @@ object CLI:
           CLIPrinter.printStatus(st)
           CLIPrinter.printHand(st)
         }
-
 
   // -------------------- Helpers interni --------------------
 
@@ -86,19 +84,9 @@ object CLI:
   private def promptPlayersName(players: Int): Vector[String] =
     (0 until players).map { i =>
       print(s"Inserisci il nome per il giocatore ${i + 1}: ")
-      StdIn.readLine().trim
+      val name = StdIn.readLine().trim
+      if name.isEmpty then s"Player${i+1}" else name
     }.toVector
-
-  /** Inizializza lo stato e distribuisce le carte */
-  private def initGame(numPlayers: Int, names: Vector[String]): Unit =
-    val (stDealt, dealtEvents, deckSize) = fairInitialDeal(numPlayers, names)
-    controller.setGameState(stDealt)
-    println(s"Nuova partita con $numPlayers giocatori.")
-    println(s"Mazzo iniziale: $deckSize carte.")
-    println(s"Primo turno: ${stDealt.nameOf(stDealt.turn)}")
-    CLIPrinter.printEvents(dealtEvents, stDealt)
-    CLIPrinter.printStatus(stDealt)
-    CLIPrinter.printHand(stDealt)
 
   /** Loop di deal: re-shuffle finché nessun giocatore ha 4 carte dello stesso rango */
   private def fairInitialDeal(numPlayers: Int, names: Vector[String]): (GameState, List[GameEvent], Int) =
@@ -110,7 +98,7 @@ object CLI:
       val shuffler = Shuffler.random
       val deckObj  = Dealing.initialDeckForPlayers(numPlayers, shuffler)
       val deck = deckObj match
-           case ListDeck(cs) => cs
+        case ListDeck(cs) => cs
       val st0 = GameState.initial(players = numPlayers, playerNames = names, shuffled = deck)
       Engine.step(st0, GameCommand.Deal) match
         case Right((st1, evs)) =>
@@ -119,6 +107,7 @@ object CLI:
         case Left(_) => ()
       attempt += 1
 
+    // se non troviamo una distribuzione perfetta, torniamo l'ultima valida
     lastGood.get
 
   private def hasAnyQuartet(st: GameState): Boolean =
