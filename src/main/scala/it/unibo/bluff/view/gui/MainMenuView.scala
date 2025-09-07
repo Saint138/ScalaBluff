@@ -10,8 +10,7 @@ import scalafx.scene.text.{Font, FontWeight}
 object MainMenuView {
   def apply(
     onNewGame: () => Unit,
-    onRules:   () => Unit,
-    onStats:   () => Unit
+    onRules:   () => Unit
   ): StackPane = {
     val title = new Label("ScalaBluff") {
       font = Font.font("Verdana", FontWeight.Bold, 40)
@@ -34,19 +33,12 @@ object MainMenuView {
       style = "-fx-background-color: #4f5d75; -fx-text-fill: white;"
       onAction = _ => onRules()
     }
-    val btnStats = new Button("Statistiche") {
-      maxWidth = Double.MaxValue
-      prefWidth = 320
-      font = Font.font("Arial", FontWeight.Bold, 18)
-      style = "-fx-background-color: #2d3142; -fx-text-fill: white;"
-      onAction = _ => onStats()
-    }
     val buttonBox = new VBox {
       spacing = 15
       alignment = Pos.Center
       fillWidth = true
       maxWidth = 400
-      children = Seq(btnNew, btnRules, btnStats)
+      children = Seq(btnNew, btnRules)
     }
     val menuBox = new VBox {
       spacing = 40

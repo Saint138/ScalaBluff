@@ -83,7 +83,6 @@ object MainGUI extends JFXApp3:
       botRunner = Some(runner)
       runner.start()
 
-
   private def dispatch(cmd: GameCommand) =
     val res = game.handleCommand(cmd)
     game.currentState.foreach(stateRef.set)
@@ -162,11 +161,11 @@ object MainGUI extends JFXApp3:
           showStatsDialog("Torneo concluso", prettyCumulative(st, cumulativeStats))
           stage.scene().root = MainMenuView(
             onNewGame = () => onNewGame(),
-            onRules   = () => println("Mostra regole..."),
-            onStats   = () => println("Mostra statistiche...")
+            onRules   = () => println("Mostra regole...")
           )
       }
     }
+
   private def startMultiplayer(names: Vector[String], rounds: Int): Unit =
     vsBot = false
     playerNames      = names
@@ -192,6 +191,7 @@ object MainGUI extends JFXApp3:
       if isSingle then startVsBot(names, rounds)       // VS Bot
       else            startMultiplayer(names, rounds)  // Multiplayer
     }
+
   override def start(): Unit =
     stage = new JFXApp3.PrimaryStage:
       initStyle(StageStyle.Decorated)
@@ -201,8 +201,7 @@ object MainGUI extends JFXApp3:
       scene = new Scene(width.value, height.value):
         root = MainMenuView(
           onNewGame = () => onNewGame(),
-          onRules   = () => println("Mostra regole..."),
-          onStats   = () => println("Mostra statistiche...")
+          onRules   = () => println("Mostra regole...")
         )
     stage.centerOnScreen()
     stage.onCloseRequest = _ => {
