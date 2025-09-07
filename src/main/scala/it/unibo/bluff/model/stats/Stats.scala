@@ -10,7 +10,7 @@ final case class PlayerStats(
   cardsPlayed: Int = 0,
   calls: Int = 0,
   successfulCalls: Int = 0,   // accusa corretta (bluff scoperto)
-  successfulBluffs: Int = 0,  // accusa sbagliata (bluff riuscito)
+  successfulBluffs: Int = 0,  // accusa sbagliata (bluff riuscito per il dichiarante)
   pileCardsTaken: Int = 0,    // carte raccolte dalla pila
   timeouts: Int = 0,
   wins: Int = 0
@@ -56,15 +56,27 @@ object StatsUpdater:
 
         case GameEvent.BluffCalled(by, against, truthful) =>
           val pileSize = prev.pile.allCards.size
+
+          // 1) Aggiorna l'accusatore: ha fatto un'accusa; se la dichiarazione era falsa, l'accusa è riuscita
           val acc1 = acc.updated(by, s => s.copy(
             calls = s.calls + 1,
-            successfulCalls = s.successfulCalls + (if truthful then 0 else 1) // truthful=false ⇒ accusa giusta
+            successfulCalls = s.successfulCalls + (if truthful then 0 else 1)
           ))
+
+          // 2) Chi prende la pila? (truthful ⇒ accuse sbagliata ⇒ carte all'accusatore; altrimenti al dichiarante)
           val receiver = if truthful then by else against.player
-          acc1.updated(receiver, s => s.copy(
-            pileCardsTaken = s.pileCardsTaken + pileSize,
-            successfulBluffs = s.successfulBluffs + (if truthful then 0 else 1)
+          val acc2 = acc1.updated(receiver, s => s.copy(
+            pileCardsTaken = s.pileCardsTaken + pileSize
           ))
+
+          // 3) Bluff riuscito = accusa sbagliata ⇒ attribuisco al dichiarante quando truthful == true
+          val acc3 =
+            if truthful then
+              acc2.updated(against.player, s => s.copy(successfulBluffs = s.successfulBluffs + 1))
+            else
+              acc2
+
+          acc3
 
         case GameEvent.TimerExpired(p) =>
           acc.updated(p, s => s.copy(timeouts = s.timeouts + 1))
