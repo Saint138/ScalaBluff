@@ -118,6 +118,18 @@ object MainGUI extends JFXApp3:
     game.setGameState(stWithClocks)
     game.currentState.foreach(stateRef.set)
 
+    // Se siamo in modalità vsBot, stampa su terminale la distribuzione iniziale (giocatore e bot)
+    if vsBot then
+      println("--- Distribuzione iniziale (console) ---")
+      val st = stWithClocks
+      st.players.foreach { pid =>
+        val name = st.nameOf(pid)
+        val hand = st.hands.getOrElse(pid, Hand.empty).cards
+        val cardsStr = if hand.isEmpty then "(nessuna)" else hand.map(_.toString).mkString(", ")
+        println(s"$name: $cardsStr")
+      }
+      println("--------------------------------------")
+
     startTimer(200L)
     startBotIfNeeded(stWithClocks) // ⬅️ QUI parte il bot solo in modalità vsBot
 
