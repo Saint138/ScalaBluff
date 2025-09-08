@@ -117,19 +117,6 @@ object MainGUI extends JFXApp3:
     val stWithClocks = GameClocks.withClocks(stDealt, 60_000L)
     game.setGameState(stWithClocks)
     game.currentState.foreach(stateRef.set)
-
-    // Se siamo in modalità vsBot, stampa su terminale la distribuzione iniziale (giocatore e bot)
-    if vsBot then
-      println("--- Distribuzione iniziale (console) ---")
-      val st = stWithClocks
-      st.players.foreach { pid =>
-        val name = st.nameOf(pid)
-        val hand = st.hands.getOrElse(pid, Hand.empty).cards
-        val cardsStr = if hand.isEmpty then "(nessuna)" else hand.map(_.toString).mkString(", ")
-        println(s"$name: $cardsStr")
-      }
-      println("--------------------------------------")
-
     startTimer(200L)
     startBotIfNeeded(stWithClocks) // ⬅️ QUI parte il bot solo in modalità vsBot
 
@@ -152,7 +139,9 @@ object MainGUI extends JFXApp3:
       val winnerOpt = st.hands.collectFirst { case (pid, hand) if hand.size == 0 => pid }
       winnerOpt.foreach { _ =>
         roundHandled = true
-
+  // ferma timer di partita e bot non appena il round è concluso
+  stopTimer()
+  stopBot()
         val roundStats = game.currentMatchStats.getOrElse(MatchStats.empty(st.players))
         showStatsDialog(s"Round $currentRound concluso", StatsUpdater.pretty(st, roundStats))
 
@@ -208,8 +197,8 @@ object MainGUI extends JFXApp3:
     stage = new JFXApp3.PrimaryStage:
       initStyle(StageStyle.Decorated)
       title = "ScalaBluff"
-      width = 800
-      height = 600
+      width = 1100
+      height = 720
       scene = new Scene(width.value, height.value):
         root = MainMenuView(
           onNewGame = () => onNewGame(),

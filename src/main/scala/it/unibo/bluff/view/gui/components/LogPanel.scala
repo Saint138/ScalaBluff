@@ -7,8 +7,9 @@ import scalafx.scene.control.Label
 object LogPanel {
   def apply(): TextArea =
     new TextArea {
-      editable = false
-      prefRowCount = 8
-      style = "-fx-font-size: 13;"
+  editable = false
+  prefRowCount = 8
+  prefHeight = 220
+  style = "-fx-font-size: 13;"
     }
 }

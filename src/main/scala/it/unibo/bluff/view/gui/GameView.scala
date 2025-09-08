@@ -53,8 +53,8 @@ object GameView {
 
       top = header
       center = new HBox(16,
-        new VBox(12, handPane, logArea) { padding = Insets(10) },
-        actions
+        new VBox(12, handPane) { padding = Insets(10) },
+        new VBox(8, actions, logArea) { padding = Insets(10) }
       ) { padding = Insets(10, 16, 10, 16) }
 
       // ===== Toggle selezione carta =====
@@ -63,7 +63,7 @@ object GameView {
         if selected.contains(c) then
           selected.remove(c)
           n.markSelected(false)
-        else if selected.size < 3 then       // (se vuoi max 4 cambia 3 -> 4)
+        else if selected.size < 3 then
           selected.add(c)
           n.markSelected(true)
         updateButtonsEnabled()
@@ -106,6 +106,7 @@ object GameView {
           logArea.appendText(s"Timeout: ${st.nameOf(p)} ha esaurito il tempo.\n")
         case Engine.GameEvent.GameEnded(w) =>
           logArea.appendText(s"🏆 Vince ${st.nameOf(w)}!\n")
+          uiTick.stop()
       }
 
       // ===== Actions (via Controller.dispatch) =====
@@ -126,6 +127,7 @@ object GameView {
                 logArea.appendText(s"Timeout: ${st2.nameOf(p)} ha esaurito il tempo.\n")
               case GameEvent.GameEnded(w) =>
                 logArea.appendText(s"🏆 Vince ${st2.nameOf(w)}!\n")
+                uiTick.stop()
                 onGameEnded(w)
               case _ => ()
             }
