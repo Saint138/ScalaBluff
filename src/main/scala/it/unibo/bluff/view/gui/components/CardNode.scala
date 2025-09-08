@@ -1,6 +1,6 @@
 package it.unibo.bluff.view.gui.components
 
-import it.unibo.bluff.model.{Card, Suit}
+import it.unibo.bluff.model.{Card, Suit, Rank}
 import scalafx.scene.layout.StackPane
 import scalafx.geometry.Insets
 import scalafx.scene.control.Label
@@ -16,6 +16,30 @@ object CardNode {
     "-fx-background-color: white; -fx-background-radius:12; -fx-border-radius:12;" +
       "-fx-border-color:#ef8354; -fx-border-width:3; -fx-effect:dropshadow(gaussian, rgba(239,131,84,0.35), 10, 0, 0, 0);"
 
+  // ---- MAPPING per il set hanhaechi/playing-cards ----
+  private def suitFolder(s: Suit): String = s.toString.toLowerCase match
+    case "cuori" | "hearts"   => "hearts"
+    case "quadri" | "diamonds"=> "diamonds"
+    case "fiori"  | "clubs"   => "clubs"
+    case "picche" | "spades"  => "spades"
+    case other                => other // fallback
+
+  private def rankToken(r: Rank): String = r.toString.toLowerCase match
+    case "ace"   | "asso"  => "A"
+    case "two"   | "due"   => "2"
+    case "three" | "tre"   => "3"
+    case "four"  | "quattro" => "4"
+    case "five"  | "cinque"  => "5"
+    case "six"   | "sei"     => "6"
+    case "seven" | "sette"   => "7"
+    case "eight" | "otto"    => "8"
+    case "nine"  | "nove"    => "9"
+    case "ten"   | "dieci"   => "10"
+    case "jack"  | "fante"   => "J"
+    case "queen" | "donna"   => "Q"
+    case "king"  | "re"      => "K"
+    case other               => other.toUpperCase // fallback
+
   private def suitSymbol(s: Suit): String = s.toString.toLowerCase match
     case "cuori" | "hearts"   => "♥"
     case "quadri" | "diamonds"=> "♦"
@@ -27,26 +51,27 @@ object CardNode {
     case "cuori" | "hearts" | "quadri" | "diamonds" => Color.web("#ef8354")
     case _                                          => Color.web("#2d3142")
 
-  private def imagePath(card: Card): String =
-    val rankStr = card.rank.toString.toLowerCase
-    val suitStr = card.suit.toString.toLowerCase
-    s"/cards/${rankStr}_${suitStr}.jpeg"
+  // Path conforme al repo: /cards/<suit>_<RANK>.png  (es: /cards/spades_A.png)
+  private def imagePath(card: Card): String = {
+    val suit = suitFolder(card.suit)
+    val rank = rankToken(card.rank)
+    s"/cards/${suit}_${rank}.png"
+  }
 
   def apply(card: Card, toggle: CardNode => Unit): CardNode =
     new CardNode(card, toggle)
 
   final class CardNode(val card: Card, toggle: CardNode => Unit) extends StackPane {
-    minWidth = 82; prefWidth = 82; maxWidth = 82
+    minWidth = 82;  prefWidth = 82;  maxWidth = 82
     minHeight = 116; prefHeight = 116; maxHeight = 116
     padding = Insets(4)
     style = baseStyle
 
-    private val maybeUrl = Option(getClass.getResource(imagePath(card)))
-    children = maybeUrl match
-      case Some(url) =>
-        new ImageView(new Image(url.toExternalForm)) {
-          fitWidth = 72; fitHeight = 108; preserveRatio = true
-        }
+    // Prova a caricare il PNG; se manca, fallback a una label testuale
+    private val maybeStream = Option(getClass.getResourceAsStream(imagePath(card)))
+    children = maybeStream match
+      case Some(stream) =>
+        new ImageView(new Image(stream, /*reqW*/72, /*reqH*/108, /*preserveRatio*/ true, /*smooth*/ true))
       case None =>
         new Label(s"${card.rank} ${suitSymbol(card.suit)}") {
           font = Font.font("System", 14)
