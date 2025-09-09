@@ -138,12 +138,12 @@ object MainGUI extends JFXApp3:
     game.currentState.foreach { st =>
       val winnerOpt = st.hands.collectFirst { case (pid, hand) if hand.size == 0 => pid }
       winnerOpt.foreach { _ =>
-        roundHandled = true
+  roundHandled = true
   // ferma timer di partita e bot non appena il round è concluso
   stopTimer()
   stopBot()
-        val roundStats = game.currentMatchStats.getOrElse(MatchStats.empty(st.players))
-        showStatsDialog(s"Round $currentRound concluso", StatsUpdater.pretty(st, roundStats))
+  val roundStats = game.currentMatchStats.getOrElse(MatchStats.empty(st.players))
+  showStatsDialog(s"Round $currentRound concluso", StatsUpdater.pretty(st, roundStats))
 
         cumulativeStats =
           if cumulativeStats.perPlayer.isEmpty then roundStats

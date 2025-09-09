@@ -22,7 +22,6 @@ object CLIPrinter:
          |  Ultima dichiarazione: $lastDecl
          |""".stripMargin.trim
     )
-
   /** Stampa le carte del giocatore di turno raggruppate per rango */
   def printHand(st: GameState): Unit =
     val hand   = st.hands.getOrElse(st.turn, Hand.empty).cards
@@ -40,16 +39,17 @@ object CLIPrinter:
           .map { case (pid, sz) => s"${st.nameOf(pid)}:$sz" }
           .mkString(", ")
         println(s"Event: carte distribuite [$pretty]")
-
       case GameEvent.Played(player, declared, count) =>
         println(s"Event: ${st.nameOf(player)} dichiara $declared e gioca $count carte")
-
       case GameEvent.BluffCalled(by, against, truthful) =>
         val esito = if truthful then "VERA" else "FALSA"
         println(s"Event: accusa di bluff da ${st.nameOf(by)} contro ${st.nameOf(against.player)} → dichiarazione $esito")
-
       case GameEvent.GameEnded(winner) =>
         println(s"🏆 Vince ${st.nameOf(winner)}!")
+      case GameEvent.TimerExpired(player) =>
+        println(s"Event: timeout di ${st.nameOf(player)}")
+      case GameEvent.BotPlayed(player, declared, count) =>
+        println(s"Event: (BOT) ${st.nameOf(player)} dichiara $declared e gioca $count carte")
     }
 
   def printHelp(gameActive: Boolean): Unit =
