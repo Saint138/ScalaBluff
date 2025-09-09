@@ -19,6 +19,7 @@ import scalafx.scene.layout.BorderPane
 import scalafx.stage.StageStyle
 import scalafx.scene.control.{Alert, TextArea}
 import scalafx.Includes.*
+import it.unibo.bluff.view.gui.RulesDialog
 
 // =============================
 // Main GUI con due modalità chiare:
@@ -89,17 +90,7 @@ object MainGUI extends JFXApp3:
     res
 
   private def showStatsDialog(hdrText: String, content: String): Unit =
-    val dlg = new Alert(Alert.AlertType.Information) {
-      headerText = hdrText
-      dialogPane().setContent(new TextArea {
-        editable = false
-        wrapText = true
-        text = content
-        prefColumnCount = 60
-        prefRowCount = 18
-      })
-    }
-    dlg.showAndWait()
+    StatsDialog.show(hdrText, content)
 
   private def prettyCumulative(gs: GameState, ms: MatchStats): String =
     val items = gs.players.map(pid => pid -> ms.perPlayer.getOrElse(pid, PlayerStats.empty))
@@ -138,12 +129,12 @@ object MainGUI extends JFXApp3:
     game.currentState.foreach { st =>
       val winnerOpt = st.hands.collectFirst { case (pid, hand) if hand.size == 0 => pid }
       winnerOpt.foreach { _ =>
-  roundHandled = true
-  // ferma timer di partita e bot non appena il round è concluso
-  stopTimer()
-  stopBot()
-  val roundStats = game.currentMatchStats.getOrElse(MatchStats.empty(st.players))
-  showStatsDialog(s"Round $currentRound concluso", StatsUpdater.pretty(st, roundStats))
+        roundHandled = true
+        // ferma timer di partita e bot non appena il round è concluso
+        stopTimer()
+        stopBot()
+        val roundStats = game.currentMatchStats.getOrElse(MatchStats.empty(st.players))
+        showStatsDialog(s"Round $currentRound concluso", StatsUpdater.pretty(st, roundStats))
 
         cumulativeStats =
           if cumulativeStats.perPlayer.isEmpty then roundStats
@@ -162,7 +153,7 @@ object MainGUI extends JFXApp3:
           showStatsDialog("Torneo concluso", prettyCumulative(st, cumulativeStats))
           stage.scene().root = MainMenuView(
             onNewGame = () => onNewGame(),
-            onRules   = () => println("Mostra regole...")
+            onRules   = () => onRules()
           )
       }
     }
@@ -193,6 +184,14 @@ object MainGUI extends JFXApp3:
       else            startMultiplayer(names, rounds)  // Multiplayer
     }
 
+  private def onRules(): Unit =
+    RulesDialog.show(() =>
+      stage.scene().root = MainMenuView(
+        onNewGame = () => onNewGame(),
+        onRules   = () => onRules()
+      )
+    )
+
   override def start(): Unit =
     stage = new JFXApp3.PrimaryStage:
       initStyle(StageStyle.Decorated)
@@ -202,7 +201,7 @@ object MainGUI extends JFXApp3:
       scene = new Scene(width.value, height.value):
         root = MainMenuView(
           onNewGame = () => onNewGame(),
-          onRules   = () => println("Mostra regole...")
+          onRules   = () => onRules()
         )
     stage.centerOnScreen()
     stage.onCloseRequest = _ => {
