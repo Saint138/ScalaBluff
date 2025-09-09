@@ -120,7 +120,15 @@ object MainGUI extends JFXApp3:
         stateRef       = stateRef,
         maxPerTurnMs   = 60_000L,
         dispatch       = dispatch,
-        onGameEnded    = _ => checkRoundEnd()
+        onGameEnded    = _ => checkRoundEnd(),
+        onExitToMenu   = () => {
+          stopTimer()
+          stopBot()
+          stage.scene().root = MainMenuView(
+            onNewGame = () => onNewGame(),
+            onRules   = () => onRules()
+          )
+        }
       )
 
   /** Se il round è finito, mostra stats e passa al prossimo / chiude il torneo. */

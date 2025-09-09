@@ -24,11 +24,12 @@ object GameView {
 
   /** La View non chiama più Engine.step: riceve una funzione di dispatch dal Controller. */
   def apply(
-    stateRef: AtomicReference[GameState],
-    maxPerTurnMs: Long = 60_000L,
-    dispatch: GameCommand => Either[String, List[GameEvent]],
-    onGameEnded: PlayerId => Unit = _ => ()
-  ): BorderPane =
+  stateRef: AtomicReference[GameState],
+  maxPerTurnMs: Long = 60_000L,
+  dispatch: GameCommand => Either[String, List[GameEvent]],
+  onGameEnded: PlayerId => Unit = _ => (),
+  onExitToMenu: () => Unit = () => ()
+  ): BorderPane = 
     new BorderPane {
 
       private def st: GameState = stateRef.get()
@@ -51,7 +52,23 @@ object GameView {
       private val logArea   = LogPanel()
       private val actions   = ActionsPanel()
 
-      top = header
+      private val btnEnd = new Button("Termina partita") {
+        style = "-fx-background-color:#ef5350; -fx-text-fill:white; -fx-font-weight:bold;"
+        onAction = _ => {
+          val res = new Alert(Alert.AlertType.Confirmation) {
+            title = "Termina partita"
+            headerText = "Vuoi davvero terminare la partita?"
+            contentText = "Perderai i progressi della partita in corso."
+            buttonTypes = Seq(ButtonType.Cancel, ButtonType.OK)
+          }.showAndWait()
+          if res.exists(_ == ButtonType.OK) then onExitToMenu()
+        }
+      }
+
+      top = new BorderPane {
+        left  = header
+        right = new HBox { spacing = 8; padding = Insets(8); children = Seq(btnEnd) }
+      }
       center = new HBox(16,
         new VBox(12, handPane) { padding = Insets(10) },
         new VBox(8, actions, logArea) { padding = Insets(10) }
