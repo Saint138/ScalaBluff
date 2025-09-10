@@ -13,8 +13,9 @@ import it.unibo.bluff.model.bot.BotManager
 import scalafx.Includes.*
 import scalafx.animation.{KeyFrame, Timeline}
 import scalafx.application.Platform
-import scalafx.geometry.Insets
+import scalafx.geometry.{Insets, Pos}
 import scalafx.scene.control.*
+import scalafx.scene.effect.GaussianBlur
 import scalafx.scene.layout.*
 import scalafx.util.Duration
 
@@ -24,12 +25,13 @@ object GameView {
 
   /** La View non chiama più Engine.step: riceve una funzione di dispatch dal Controller. */
   def apply(
-  stateRef: AtomicReference[GameState],
-  maxPerTurnMs: Long = 60_000L,
-  dispatch: GameCommand => Either[String, List[GameEvent]],
-  onGameEnded: PlayerId => Unit = _ => (),
-  onExitToMenu: () => Unit = () => ()
-  ): BorderPane = 
+    stateRef: AtomicReference[GameState],
+    maxPerTurnMs: Long = 60_000L,
+    dispatch: GameCommand => Either[String, List[GameEvent]],
+    onGameEnded: PlayerId => Unit = _ => (),
+    onExitToMenu: () => Unit = () => (),
+    onOverlayChange: Boolean => Unit = _ => () // true=overlay ON, false=OFF
+  ): BorderPane =
     new BorderPane {
 
       private def st: GameState = stateRef.get()
@@ -52,6 +54,81 @@ object GameView {
       private val logArea   = LogPanel()
       private val actions   = ActionsPanel()
 
+      // (opzionale) leggero boost visivo ai bottoni azione, senza spostare il pannello
+      actions.style = "-fx-font-size: 14px;"
+
+      // ===== Overlay privacy tra turni (solo 2 umani) =====
+      private var currentViewer: PlayerId = st.turn
+      private var overlayShown: Boolean = false
+      private var gameEnded: Boolean = false
+
+      // Contenuto centrale reale (layout invariato)
+      private val centerContent = new HBox(16,
+        new VBox(12, handPane) { padding = Insets(10) },
+        new VBox(8, actions, logArea) { padding = Insets(10) }
+      ) { padding = Insets(10, 16, 10, 16) }
+
+      // Overlay UI (più evidente e comodo da cliccare)
+      private val overlayLabel = new Label {
+        style = "-fx-text-fill: white; -fx-font-size: 18px; -fx-font-weight: bold;"
+      }
+      private val btnReady = new Button("Sono pronto") {
+        // più grande, “primary look”, tasto Invio attiva
+        style = "-fx-font-size:16px; -fx-font-weight:bold; -fx-padding:10 18 10 18;"
+        minWidth = 200
+        defaultButton = true
+        onAction = _ => {
+          hideOverlay()
+          currentViewer = st.turn
+        }
+      }
+      private val overlayPane = new VBox {
+        alignment = Pos.Center
+        spacing = 18
+        padding = Insets(28)
+        style = "-fx-background-color: rgba(0,0,0,0.60);"
+        visible = false
+        pickOnBounds = true // cattura i click sull’intera area
+        children = Seq(
+          new Label("Passa il dispositivo al prossimo giocatore") {
+            style = "-fx-text-fill: white; -fx-font-size: 16px;"
+          },
+          overlayLabel,
+          btnReady
+        )
+      }
+      StackPane.setAlignment(overlayPane, Pos.Center)
+
+      private def shouldUseOverlay: Boolean =
+        st.players.size == 2 && !st.players.exists(pid => st.nameOf(pid).equalsIgnoreCase("bot"))
+
+      private def showOverlay(next: PlayerId): Unit = {
+        overlayLabel.text = s"Sarà il turno di ${st.nameOf(next)}"
+        centerContent.effect = new GaussianBlur(16)
+        overlayPane.visible = true
+        overlayPane.toFront()
+        actions.disable = true
+        handPane.visible = false // nasconde le carte
+        overlayShown = true
+        onOverlayChange(true)
+      }
+
+      private def hideOverlay(): Unit = {
+        overlayPane.visible = false
+        centerContent.effect = null
+        actions.disable = false
+        handPane.visible = true
+        overlayShown = false
+        onOverlayChange(false)
+      }
+
+      private def maybeShowOverlayOnTurnChange(): Unit = {
+        if !gameEnded && shouldUseOverlay then
+          val next = st.turn
+          if !overlayShown && next != currentViewer then
+            showOverlay(next)
+      }
+
       private val btnEnd = new Button("Termina partita") {
         style = "-fx-background-color:#ef5350; -fx-text-fill:white; -fx-font-weight:bold;"
         onAction = _ => {
@@ -69,10 +146,11 @@ object GameView {
         left  = header
         right = new HBox { spacing = 8; padding = Insets(8); children = Seq(btnEnd) }
       }
-      center = new HBox(16,
-        new VBox(12, handPane) { padding = Insets(10) },
-        new VBox(8, actions, logArea) { padding = Insets(10) }
-      ) { padding = Insets(10, 16, 10, 16) }
+
+      // StackPane per sovrapporre overlay al contenuto
+      center = new StackPane {
+        children = Seq(centerContent, overlayPane)
+      }
 
       // ===== Toggle selezione carta =====
       private def toggleSelect(n: CardNode.CardNode): Unit =
@@ -107,7 +185,11 @@ object GameView {
       private def updateButtonsEnabled(): Unit =
         actions.updateButtons(st, selected.nonEmpty)
 
-      private def updateAll(): Unit = { updateHeader(); renderHand() }
+      private def updateAll(): Unit = {
+        updateHeader()
+        renderHand()
+        maybeShowOverlayOnTurnChange()
+      }
 
       // ===== Logger eventi in GameView (anche per bot) =====
       private def appendEvent(ev: Engine.GameEvent): Unit = ev match {
@@ -145,6 +227,8 @@ object GameView {
               case GameEvent.GameEnded(w) =>
                 logArea.appendText(s"🏆 Vince ${st2.nameOf(w)}!\n")
                 uiTick.stop()
+                gameEnded = true
+                if overlayShown then hideOverlay()
                 onGameEnded(w)
               case _ => ()
             }
@@ -170,6 +254,7 @@ object GameView {
           evs.foreach(appendEvent)
           updateHeader()
           renderHand()
+          maybeShowOverlayOnTurnChange()
         }
       }
 

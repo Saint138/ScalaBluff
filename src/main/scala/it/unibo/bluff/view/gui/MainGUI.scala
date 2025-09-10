@@ -17,7 +17,7 @@ import scalafx.application.JFXApp3
 import scalafx.scene.Scene
 import scalafx.scene.layout.BorderPane
 import scalafx.stage.StageStyle
-import scalafx.scene.control.{Alert, TextArea}
+import scalafx.scene.control.Alert
 import scalafx.Includes.*
 import it.unibo.bluff.view.gui.RulesDialog
 
@@ -109,7 +109,7 @@ object MainGUI extends JFXApp3:
     game.setGameState(stWithClocks)
     game.currentState.foreach(stateRef.set)
     startTimer(200L)
-    startBotIfNeeded(stWithClocks) // ⬅️ QUI parte il bot solo in modalità vsBot
+    startBotIfNeeded(stWithClocks) // ⬅️ parte il bot solo in modalità vsBot
 
     val mode   = if vsBot then " – VS Bot" else " – Multiplayer"
     val suffix = if tournamentRounds > 1 then s" (Round $currentRound/$tournamentRounds)" else ""
@@ -128,6 +128,10 @@ object MainGUI extends JFXApp3:
             onNewGame = () => onNewGame(),
             onRules   = () => onRules()
           )
+        },
+        // Pausa/riprendi il timer quando l’overlay privacy è visibile
+        onOverlayChange = visible => {
+          if visible then stopTimer() else startTimer(200L)
         }
       )
 
