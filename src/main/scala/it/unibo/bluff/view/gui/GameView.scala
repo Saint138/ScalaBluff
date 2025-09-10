@@ -54,7 +54,7 @@ object GameView {
       private val logArea   = LogPanel()
       private val actions   = ActionsPanel()
 
-      // (opzionale) leggero boost visivo ai bottoni azione, senza spostare il pannello
+      // (opzionale) leggero boost visivo ai bottoni azione
       actions.style = "-fx-font-size: 14px;"
 
       // ===== Overlay privacy tra turni (solo 2 umani) =====
@@ -68,12 +68,11 @@ object GameView {
         new VBox(8, actions, logArea) { padding = Insets(10) }
       ) { padding = Insets(10, 16, 10, 16) }
 
-      // Overlay UI (più evidente e comodo da cliccare)
+      // Overlay UI (evidente e centrato)
       private val overlayLabel = new Label {
         style = "-fx-text-fill: white; -fx-font-size: 18px; -fx-font-weight: bold;"
       }
       private val btnReady = new Button("Sono pronto") {
-        // più grande, “primary look”, tasto Invio attiva
         style = "-fx-font-size:16px; -fx-font-weight:bold; -fx-padding:10 18 10 18;"
         minWidth = 200
         defaultButton = true
@@ -88,7 +87,7 @@ object GameView {
         padding = Insets(28)
         style = "-fx-background-color: rgba(0,0,0,0.60);"
         visible = false
-        pickOnBounds = true // cattura i click sull’intera area
+        pickOnBounds = true
         children = Seq(
           new Label("Passa il dispositivo al prossimo giocatore") {
             style = "-fx-text-fill: white; -fx-font-size: 16px;"
@@ -108,7 +107,7 @@ object GameView {
         overlayPane.visible = true
         overlayPane.toFront()
         actions.disable = true
-        handPane.visible = false // nasconde le carte
+        handPane.visible = false
         overlayShown = true
         onOverlayChange(true)
       }
@@ -158,8 +157,8 @@ object GameView {
         if selected.contains(c) then
           selected.remove(c)
           n.markSelected(false)
-        else if selected.size < 3 then
-          selected.add(c)
+        else
+          selected.add(c)      // ← rimosso il limite a 3, ora puoi selezionare 4 (o più) carte
           n.markSelected(true)
         updateButtonsEnabled()
 
@@ -203,6 +202,8 @@ object GameView {
           logArea.appendText(s"${st.nameOf(by)} accusa ${st.nameOf(ag.player)} → " + (if truth then "VERA" else "FALSA") + "\n")
         case Engine.GameEvent.TimerExpired(p) =>
           logArea.appendText(s"Timeout: ${st.nameOf(p)} ha esaurito il tempo.\n")
+        case Engine.GameEvent.QuartetCleared(p, r, cnt) =>
+          logArea.appendText(s"♻️ ${st.nameOf(p)} elimina automaticamente $cnt carte ($r)\n")
         case Engine.GameEvent.GameEnded(w) =>
           logArea.appendText(s"🏆 Vince ${st.nameOf(w)}!\n")
           uiTick.stop()
@@ -224,6 +225,8 @@ object GameView {
                 logArea.appendText(s"${st2.nameOf(by)} accusa ${st2.nameOf(ag.player)} → " + (if truth then "VERA" else "FALSA") + "\n")
               case GameEvent.TimerExpired(p) =>
                 logArea.appendText(s"Timeout: ${st2.nameOf(p)} ha esaurito il tempo.\n")
+              case GameEvent.QuartetCleared(p, r, cnt) =>
+                logArea.appendText(s"♻️ ${st2.nameOf(p)} elimina automaticamente $cnt carte ($r)\n")
               case GameEvent.GameEnded(w) =>
                 logArea.appendText(s"🏆 Vince ${st2.nameOf(w)}!\n")
                 uiTick.stop()
