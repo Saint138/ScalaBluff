@@ -280,3 +280,4 @@ Infine, gli ultimi contribuiti apportati hanno riguardato alcune parti dell'inte
 implementazione è stata suddivisa tra tutti i membri del team.
 
 In particolare, il mio contributo ha riguardato l'inserimento delle immagini delle carte visibili nella gui, la gestione dell'offuscamento temporaneo della gui per evitare che i giocatori barino vedendo le carte dell'avversario e l'inserimento del tasto per la fine della partita anticipata.
+- [Torna a Implementazione](implementazione.md)

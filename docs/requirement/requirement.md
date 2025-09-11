@@ -27,7 +27,7 @@ Il gioco prevede inoltre:
 - log eventi per UX/debug,  
 - possibilità di giocare contro bot con comportamento riproducibile per test.  
 
-![Figura 3.1: Schermata Home del Gioco](percorso/della/immagine.png)
+![Schermata Home](../images/home.png)
 
 
 ## Requisiti funzionali
@@ -40,7 +40,6 @@ Il gioco prevede inoltre:
 - L’utente deve poter selezionare *1..N* carte dalla propria mano per giocarle in un turno.  
 - L’utente deve poter dichiarare un *rank* (valore) associato alle carte giocate al momento del play.  
 - L’utente deve poter confermare l’azione di gioco tramite un pulsante **Play** o annullarla tramite **Clear/Cancel** prima dell’invio.  
-- L’utente deve poter passare il proprio turno usando un pulsante **Pass**.  
 - L’utente deve poter chiamare il bluff su una giocata avversaria usando un pulsante **Call Bluff**.  
 - L’utente deve poter vedere feedback immediato sull’esito di una chiamata di bluff (bluff vero/falso) e quale giocatore raccoglie la pila come conseguenza.  
 - L’utente deve poter osservare il log degli eventi di gioco (giocate, bluff, raccolte pila, timeout, vincitori) in un’area dedicata con altezza fissa che non altera la visuale delle carte.  
@@ -50,22 +49,45 @@ Il gioco prevede inoltre:
 - L’utente deve poter vedere lo stato della partita aggiornarsi in tempo reale quando le azioni vengono processate (mani, mazzo, pila, turno).  
 - L’utente deve poter terminare la partita e tornare al menu principale quando un giocatore esaurisce la mano (vincitore).  
 - L’utente deve poter chiedere una panoramica di debug (es. dump dello stato con `println` su console) per scopi di test/development se il gioco lo supporta.  
-- L’utente deve poter impostare varianti di gioco minime (es. rank fisso obbligatorio, numero massimo di carte giocate) tramite le impostazioni di partita.  
 - L’utente deve vincere la partita quando il proprio mazzo di mano è vuoto e ricevere una schermata di fine partita con risultato e statistiche essenziali.  
 
 ---
 
-### Requisiti di sistema
-*(da dettagliare in base alle specifiche di implementazione del progetto)*  
+### Sistema
+
+- Il sistema deve creare la scena di gioco principale, provvista di mano del giocatore, carte degli avversari (conteggiate), mazzo residuo e pila degli scarti.  
+- Il sistema deve gestire più schermate: quella iniziale (menu) e quella di gioco, rispettivamente all’avvio dell’applicazione e all’inizio della partita.  
+- Il sistema deve aggiornare lo stato della partita in base alle azioni dell’utente (giocata, pass, call bluff) e alle mosse del bot.  
+- Il sistema deve mostrare il log degli eventi (giocate, bluff, penalità, vincitore) in tempo reale.  
+- Il sistema deve gestire il comportamento del bot in termini di scelte di gioco e bluff (casuali o semplificate).  
+- Il sistema deve rilevare la fine della partita quando un giocatore esaurisce la mano e aggiornare la schermata di vittoria.  
 
 ---
 
 ## Requisiti non funzionali
-*(da dettagliare: prestazioni, usabilità, sicurezza, portabilità, ecc.)*  
+
+- **Grafica**: il gioco deve fornire un’interfaccia testuale chiara e leggibile, con possibilità di estensione futura verso interfacce grafiche (es. ScalaFX).  
+- **Usabilità**: il gioco deve rispondere in maniera intuitiva alle azioni dell’utente, fornendo feedback immediato (es. conferma giocata, esito bluff, notifiche di errore).  
+- **Affidabilità**: il sistema deve garantire la coerenza dello stato di gioco anche in presenza di mosse illegittime, notificando l’utente senza compromettere la partita.  
 
 ---
 
 ## Requisiti di implementazione
-*(da dettagliare: vincoli tecnici, linguaggi, librerie, ambienti di sviluppo)*  
+
+- Utilizzo di:  
+  - **Scala 3.3.0**  
+  - **ScalaTest 3.3.x**  
+  - **JDK 17+**  
+
+- Architettura modulare per la gestione di:  
+  - logica del gioco (regole, turni, bluff, penalità),  
+  - interfaccia testuale,  
+  - bot con logiche di comportamento semplici.  
+
+- Possibilità di estendere il sistema con:  
+  - modalità torneo,  
+  - varianti di gioco,  
+  - interfaccia grafica avanzata (ScalaFX o curses).  
+
 
  - [Home](../index.md)
