@@ -41,6 +41,24 @@ L’obiettivo del gioco è terminare la propria pila di carte; in tal caso la pa
 - Interfaccia avanzata con ScalaFX o curses  
 
 ---
+# Link alle pagine
+
+Ecco i file Markdown presenti nella cartella `docs` (link relativi a questo file):
+
+- [Indice (index.md)](index.md)
+- [Sprint 0 — documentazione](sprint/sprint0.md)
+- [Design di dettaglio](design_di_dettaglio/design_di_dettaglio.md)
+- [Design architetturale](design_architetturale/design_architetturale.md)
+- [Requisiti](requirement/requirement.md)
+- [Processo di sviluppo](process/processo_di_sviluppo.md)
+- [Testing](testing/testing.md)
+- [Retrospettiva](retrospettiva/retrospettiva.md)
+- Report di implementazione:
+	- [Santi](report/implementazione/Santi.md)
+	- [Sajmir Buzi](report/implementazione/Sajmir_Buzi.md)
+	- [Margherita Balzoni](report/implementazione/Margherita_Balzoni.md)
+	- [Implementazione (generale)](report/implementazione/implementazione.md)
+
 
 # Contributors
 

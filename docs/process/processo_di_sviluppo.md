@@ -55,3 +55,4 @@ Come build tool è stato scelto **sbt** al posto di **Gradle**, con l’obiettiv
 
 Infine, l’intera documentazione del progetto è mantenuta costantemente aggiornata tramite **GitHub Pages**, che esegue un nuovo deploy a ogni modifica apportata.  
 
+- [Home](index.md)

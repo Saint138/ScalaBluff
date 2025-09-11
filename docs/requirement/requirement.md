@@ -68,3 +68,4 @@ Il gioco prevede inoltre:
 ## Requisiti di implementazione
 *(da dettagliare: vincoli tecnici, linguaggi, librerie, ambienti di sviluppo)*  
 
+- [Home](index.md)
