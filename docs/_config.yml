@@ -1,13 +1,54 @@
 title: "ScalaBluff"
-description: Project Documentation
-remote_theme: just-the-docs/just-the-docs@v0.10.0
-search_enabled: true
-color_scheme: dark
-nav_enabled: true
+description: "Project Documentation"
 
-nav_external_links:
-  - title: Repository on GitHub
-    url: https://github.com/Saint138/ScalaBluff
+# Tema
+remote_theme: "mmistakes/minimal-mistakes@4.24.0"
 
-mermaid:
-  version: "9.1.3"
+# URL del sito (aggiorna se cambi repo o username)
+url: "https://saint138.github.io"
+baseurl: "/ScalaBluff"
+
+# Skin grafica (altre: default, air, contrast, neon…)
+minimal_mistakes_skin: "dark"
+
+# Plugin
+plugins:
+  - jekyll-include-cache
+  - jekyll-feed
+  - jekyll-sitemap
+
+# Navigazione: includi docs e pagine extra
+include:
+  - _pages
+  - docs
+
+# Ricerca lato client
+search: true
+
+# Autore (mostrato nel footer)
+author:
+  name: "ScalaBluff Team"
+  links:
+    - label: "GitHub"
+      icon: "fab fa-github"
+      url: "https://github.com/Saint138/ScalaBluff"
+
+# Link nel footer
+footer:
+  links:
+    - label: "Repository"
+      icon: "fab fa-github"
+      url: "https://github.com/Saint138/ScalaBluff"
+
+# Default per i file dentro docs/
+defaults:
+  - scope:
+      path: "docs"
+      type: "pages"
+    values:
+      layout: single
+      classes: wide
+      toc: true
+      toc_sticky: true
+      sidebar:
+        nav: "docs"   # menu definito in _data/navigation.yml
