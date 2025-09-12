@@ -9,7 +9,8 @@ Il mio contributo al progetto si è focalizzato sulle seguenti aree:
 * [Sistema di statistiche](#sistema-di-statistiche): `PlayerStats`, `MatchStats`, `StatsUpdater`.
 * [Testing del motore](#testing-del-motore): `EngineTest`.
 * [Validazioni e controlli](#validazioni-e-controlli): sistema di validazione turni e proprietà carte.
-* [Contributi](#Contributi-nella-Gui)
+* [Test](#testing)
+* [Contributi](#contributi-nella-gui)
 ---
 
 ## Motore di gioco
