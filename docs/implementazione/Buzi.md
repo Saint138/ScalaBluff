@@ -10,11 +10,11 @@ parent: Implementazione
 
 Il mio contributo al progetto si è concentrato principalmente sulle seguenti aree:
 
-* [Creazione dell'entita Player](#player): creazione dell'entità player che serviranno per effettuare il gioco tramite mosse|regole definite dai colleghi nell' engine del gioco.
-* [Dealing](#dealing-shuffler-e-integrazione-nel-motore): implementazione della logica di distribuzione round-robin e del flusso di initial deal usato dal CLI e dalla GUI.
-* [Shuffler](#dealing-shuffler-e-integrazione-nel-motore): interfaccia/implementazione per mescolare il mazzo (supporto a seed per testabilità) usata nella preparazione del `fairInitialDeal`.
-* [Integrazione con la GUI](#integrazione-con-la-gui): disabilitazione dei controlli utente durante il turno bot, log diagnostici e stampa dello stato per debug.
-* [Testing e debugging runtime](#testing): strumenti di logging, println e test manuali per verificare scenari del dealing della carte create.
+- [Creazione dell'entita Player](#player): creazione dell'entità player che serviranno per effettuare il gioco tramite mosse|regole definite dai colleghi nell' engine del gioco.
+- [Dealing](#dealing-shuffler-e-integrazione-nel-motore): implementazione della logica di distribuzione round-robin e del flusso di initial deal usato dal CLI e dalla GUI.
+- [Shuffler](#dealing-shuffler-e-integrazione-nel-motore): interfaccia/implementazione per mescolare il mazzo (supporto a seed per testabilità) usata nella preparazione del `fairInitialDeal`.
+- [Integrazione con la GUI](#integrazione-con-la-gui): disabilitazione dei controlli utente durante il turno bot, log diagnostici e stampa dello stato per debug.
+- [Testing e debugging runtime](#testing): strumenti di logging, println e test manuali per verificare scenari del dealing della carte create.
 
 ---
 
@@ -94,7 +94,7 @@ Questa routine costruisce uno stato iniziale "equo" cercando una distribuzione s
 - Viene eseguito un ciclo fino a `MaxAttempts` dove a ogni iterazione si crea un nuovo `shuffler` e si genera un `deck` tramite `Dealing.initialDeckForPlayers`.
 - Si costruisce lo stato iniziale `st0` usando il mazzo mescolato e si invoca `Engine.step(st0, GameCommand.Deal)` per applicare la distribuzione.
 - Se la distribuzione non presenta quartetti (`!hasAnyQuartet(st1)`) viene immediatamente restituito quel risultato; altrimenti si conserva la prima distribuzione valida in `lastGood` come fallback.
---
+-
 ### testing
 ```scala
 class DeckAndDealingPropertySpec extends AnyFunSuite:
@@ -128,6 +128,7 @@ class DeckAndDealingPropertySpec extends AnyFunSuite:
 		}
 	}
 ```
+
 Spiegazione: il primo caso assicura che lo `shuffle` sia riproducibile quando si usa lo stesso seed; il secondo controlla che seed diversi producano permutazioni diverse (proprietà statistica); il terzo verifica che il `dealing` distribuisca tutte le 52 carte senza duplicati e con differenze di mano al massimo di una carta, garantendo equità nella distribuzione.
 
 ### MainGUI - avvio round e integrazione del dealing nella GUI:
