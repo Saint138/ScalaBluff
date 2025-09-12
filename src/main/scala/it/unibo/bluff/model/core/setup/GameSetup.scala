@@ -1,9 +1,9 @@
 package it.unibo.bluff.model.core.setup
 
-import it.unibo.bluff.engine.Engine
-import it.unibo.bluff.engine.Engine.{GameCommand, GameEvent}
+import it.unibo.bluff.model.core.engine.Engine
+import it.unibo.bluff.model.core.engine.Engine.{GameCommand, GameEvent}
 import it.unibo.bluff.model.*
-import it.unibo.bluff.model.state.GameState
+import it.unibo.bluff.model.core.state.GameState
 import it.unibo.bluff.model.TurnOrder.given
 //game setup for gui section , to be improved if necessary..
 object GameSetup {

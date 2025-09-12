@@ -3,12 +3,12 @@ package gui
 import java.util.concurrent.atomic.AtomicReference
 
 import it.unibo.bluff.view.gui.{MainMenuView, NewGameDialog, GameView}
-import it.unibo.bluff.setup.GameSetup
-import it.unibo.bluff.timer.GameTimer
+import it.unibo.bluff.model.core.setup.GameSetup
+import it.unibo.bluff.model.core.timer.GameTimer
 import it.unibo.bluff.controller.GameController
-import it.unibo.bluff.engine.Engine.GameCommand
+import it.unibo.bluff.model.core.engine.Engine.GameCommand
 import it.unibo.bluff.model.TurnOrder.given
-import it.unibo.bluff.model.state.{GameState, GameClocks}
+import it.unibo.bluff.model.core.state.{GameState, GameClocks}
 import it.unibo.bluff.model.*
 import it.unibo.bluff.model.stats.{MatchStats, PlayerStats, StatsUpdater}
 import it.unibo.bluff.model.bot.{RandomBot, BotRunner} // BOT

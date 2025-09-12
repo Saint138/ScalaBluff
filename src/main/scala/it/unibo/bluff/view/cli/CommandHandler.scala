@@ -1,10 +1,10 @@
 package it.unibo.bluff.view.cli
 
-import it.unibo.bluff.engine.Engine
-import it.unibo.bluff.engine.Engine.GameCommand
-import it.unibo.bluff.engine.Engine.GameCommand.Play
+import it.unibo.bluff.model.core.engine.Engine
+import it.unibo.bluff.model.core.engine.Engine.GameCommand
+import it.unibo.bluff.model.core.engine.Engine.GameCommand.Play
 import it.unibo.bluff.model.*
-import it.unibo.bluff.model.state.*
+import it.unibo.bluff.model.core.state.*
 
 object CommandHandler:
 

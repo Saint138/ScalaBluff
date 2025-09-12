@@ -1,8 +1,8 @@
 package it.unibo.bluff.model.stats
 
 import it.unibo.bluff.model.*
-import it.unibo.bluff.model.state.GameState
-import it.unibo.bluff.engine.Engine.GameEvent
+import it.unibo.bluff.model.core.state.GameState
+import it.unibo.bluff.model.core.engine.Engine.GameEvent
 
 /** Statistiche per singolo giocatore. */
 final case class PlayerStats(

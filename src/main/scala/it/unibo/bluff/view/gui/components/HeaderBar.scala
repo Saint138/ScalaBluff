@@ -1,6 +1,6 @@
 package it.unibo.bluff.view.gui.components
 
-import it.unibo.bluff.model.state.GameState
+import it.unibo.bluff.model.core.state.GameState
 import scala.reflect.Selectable.reflectiveSelectable
 import scalafx.scene.layout.{BorderPane, HBox, VBox, Region}
 import scalafx.scene.control.{Label, ProgressBar}

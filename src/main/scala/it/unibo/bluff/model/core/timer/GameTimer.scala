@@ -3,7 +3,7 @@ package it.unibo.bluff.model.core.timer
 import java.util.concurrent.{ScheduledExecutorService, Executors, TimeUnit}
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicReference
-import it.unibo.bluff.model.state.{GameState, GameClocks}
+import it.unibo.bluff.model.core.state.{GameState, GameClocks}
 import it.unibo.bluff.model.PlayerId
 
 /**

@@ -1,9 +1,9 @@
 package it.unibo.bluff.controller
 
-import it.unibo.bluff.engine.Engine
-import it.unibo.bluff.engine.Engine.{GameCommand, GameEvent}
+import it.unibo.bluff.model.core.engine.Engine
+import it.unibo.bluff.model.core.engine.Engine.{GameCommand, GameEvent}
 import it.unibo.bluff.model.*
-import it.unibo.bluff.model.state.GameState
+import it.unibo.bluff.model.core.state.GameState
 import it.unibo.bluff.model.TurnOrder.given
 import it.unibo.bluff.model.stats.{MatchStats, StatsUpdater}
 
@@ -26,6 +26,11 @@ final class GameController:
     state match
       case None => Left("Nessuna partita in corso")
       case Some(st) =>
+        println(s"[DEBUG Controller] Prima: turno=${st.turn}, comando=$cmd")
+        val res = Engine.step(st, cmd)
+        res.foreach { case (newSt, evs) =>
+          println(s"[DEBUG Controller] Dopo: turno=${newSt.turn}, eventi=$evs")
+        }
         val prev = st
         Engine.step(st, cmd).map { case (st2, evs) =>
           state = Some(st2)

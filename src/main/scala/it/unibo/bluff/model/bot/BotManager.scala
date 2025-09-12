@@ -1,8 +1,8 @@
 package it.unibo.bluff.model.bot
 
-import it.unibo.bluff.engine.Engine
-import it.unibo.bluff.engine.Engine.GameEvent
-import it.unibo.bluff.model.state.GameState
+import it.unibo.bluff.model.core.engine.Engine
+import it.unibo.bluff.model.core.engine.Engine.GameEvent
+import it.unibo.bluff.model.core.state.GameState
 
 object BotManager:
 
@@ -10,7 +10,16 @@ object BotManager:
   @volatile var onEvents: List[Engine.GameEvent] => Unit = _ => ()
   /** Esegue il turno del bot */
   def takeTurn(bot: RandomBot, state: GameState): Either[String, (GameState, List[GameEvent])] =
+    
     val move = bot.decideMove(state)
+
+    println(s"[DEBUG] Prima di step: turno=${state.turn}, bot=${bot.id}")
+    val result = Engine.step(state, move)
+    result.foreach { case (st2, evs) =>
+      println(s"[DEBUG] Dopo step: turno=${st2.turn}, eventi=$evs")
+    }
+    
+
     move match
       case play: Engine.GameCommand.Play =>
         println(s"🤖 Bot gioca: ${play.cards.map(_.rank).mkString(", ")} dichiarando ${play.declared}")
