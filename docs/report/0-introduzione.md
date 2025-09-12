@@ -1,3 +1,9 @@
+---
+title: Introduzione
+nav_order: 0
+parent: Report
+---
+
 # Introduzione
 
 L’obiettivo del progetto è la realizzazione di un clone del gioco **Dubito** per PC, denominato **ScalaBluff**.  

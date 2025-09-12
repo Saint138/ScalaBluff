@@ -1,4 +1,10 @@
-# Implementazione - Engine, Statistics e Testing
+---
+title: Gioele Santi
+nav_order: 1
+parent: Implementazione
+---
+
+# Implementazione - Gioele Santi
 
 ## Panoramica dei Contributi
 
