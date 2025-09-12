@@ -34,7 +34,7 @@ Queste modifiche hanno contribuito a stabilire la pipeline completa di avvio par
 
 
 
-## Dealing, Shuffler e Integrazione nel motore
+### Dealing, Shuffler e Integrazione nel motore
 
 Di seguito riporto estratti reali dal codice che mostrano le funzioni di dealing e come vengono usate all'avvio della partita.
 
@@ -95,7 +95,7 @@ Questa routine costruisce uno stato iniziale "equo" cercando una distribuzione s
 - Si costruisce lo stato iniziale `st0` usando il mazzo mescolato e si invoca `Engine.step(st0, GameCommand.Deal)` per applicare la distribuzione.
 - Se la distribuzione non presenta quartetti (`!hasAnyQuartet(st1)`) viene immediatamente restituito quel risultato; altrimenti si conserva la prima distribuzione valida in `lastGood` come fallback.
 --
-## testing
+### testing
 ```scala
 class DeckAndDealingPropertySpec extends AnyFunSuite:
 
@@ -130,7 +130,7 @@ class DeckAndDealingPropertySpec extends AnyFunSuite:
 ```
 Spiegazione: il primo caso assicura che lo `shuffle` sia riproducibile quando si usa lo stesso seed; il secondo controlla che seed diversi producano permutazioni diverse (proprietà statistica); il terzo verifica che il `dealing` distribuisca tutte le 52 carte senza duplicati e con differenze di mano al massimo di una carta, garantendo equità nella distribuzione.
 
-MainGUI - avvio round e integrazione del dealing nella GUI:
+### MainGUI - avvio round e integrazione del dealing nella GUI:
 
 ```scala
 private def startRound(): Unit =
@@ -151,7 +151,7 @@ Questa routine coordina l'avvio di un round nella GUI:
 - Avvia il `GameTimer` (`startTimer`) per far partire il tick dell'interfaccia (header/tempo) e la logica di timeout.
 
 
-## GameView - rendering e interazione iniziale
+### GameView - rendering e interazione iniziale
 
 Estratti dalla `GameView` che mostrano come viene renderizzata la mano e come vengono gestiti gli eventi `Dealt`:
 
@@ -190,7 +190,7 @@ Spiegazione:
 - Questo approccio separa la logica di presentazione dall'engine: l'engine genera eventi, la view li interpreta e li mostra.
 
 
-## GameTimer - snippet del timer di turno
+### GameTimer - snippet del timer di turno
 
 L'implementazione del `GameTimer` utilizza uno scheduler per tickare il clock del giocatore corrente e chiamare la callback `onTimeout` una volta quando il clock scade:
 
@@ -220,7 +220,7 @@ Il `GameTimer` esegue periodicamente un task che aggiorna il clock del giocatore
 - Lo stato aggiornato viene scritto indietro nello `stateRef` condiviso affinché la UI e il motore possano leggerlo.
 - `lastRemaining` serve a evitare di inviare più volte la stessa notifica di timeout: la callback `onTimeout` viene chiamata solo quando si attraversa la soglia da >0 a <=0.
 
-## Player
+### Player
 
 Estratto semplificato da `Player.scala` (adattato):
 
