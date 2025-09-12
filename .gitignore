@@ -29,3 +29,26 @@ project/plugins/project/
 .metals/metals.lock.db
 .metals/metals.lock.db
 .metals/metals.lock.db
+# ==================================
+# Jekyll / GitHub Pages
+# ==================================
+_site/
+.jekyll-cache/
+.sass-cache/
+.jekyll-metadata
+
+# Bundler / Ruby
+.bundle/
+vendor/
+Gemfile.lock
+
+# ==================================
+# Node (se usi tool JS/CSS)
+# ==================================
+node_modules/
+
+# ==================================
+# OS files
+# ==================================
+.DS_Store
+Thumbs.db
