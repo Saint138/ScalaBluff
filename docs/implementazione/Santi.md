@@ -1,4 +1,10 @@
-# Implementazione - Engine, Statistics e Testing
+---
+title: Santi
+nav_order: 1
+layout: default
+---
+
+# Implementazione - Gioele Santi
 
 ## Panoramica dei Contributi
 
@@ -6,10 +12,11 @@ Il mio contributo al progetto si è focalizzato sulle seguenti aree:
 
 * [Motore di gioco](#motore-di-gioco): `Engine`, `GameCommand`, `GameEvent`, `GameEngine`.
 * [Gestione degli eventi](#gestione-degli-eventi): implementazione del pattern Command-Event.
-* [Sistema di statistiche](#sistema-di-statistiche): `PlayerStats`, `MatchStats`, `StatsUpdater`.
-* [Testing del motore](#testing-del-motore): `EngineTest`.
 * [Validazioni e controlli](#validazioni-e-controlli): sistema di validazione turni e proprietà carte.
-* [Contributi](#Contributi-nella-Gui)
+* [Sistema di statistiche](#sistema-di-statistiche): `PlayerStats`, `MatchStats`, `StatsUpdater`.
+* [Torneo](#gestione-del-torneo): 
+* [Testing del motore](#testing-del-motore): `EngineTest`.
+* [Contributi](#contributi-nella-gui)
 ---
 
 ## Motore di gioco
@@ -159,7 +166,7 @@ object StatsUpdater:
 
 L'approccio event-driven garantisce che le statistiche siano sempre coerenti con lo stato del gioco e che tutti gli eventi rilevanti vengano tracciati correttamente. La gestione dell'evento `BluffCalled` è particolarmente complessa, dovendo aggiornare le statistiche di più giocatori contemporaneamente e distinguere tra accuse riuscite e bluff andati a buon fine.
 
-## Gestione dei tornei
+## Gestione del torneo
 
 La gestione dei tornei rappresenta una delle funzionalità più avanzate implementate, permettendo di organizzare competizioni multi-round con statistiche cumulative e gestione automatica delle transizioni.
 
@@ -196,7 +203,7 @@ private def prettyCumulative(gs: GameState, ms: MatchStats): String =
 
 La classifica finale ordina i giocatori prima per numero di vittorie, poi per abilità complessive (somma di accuse riuscite e bluff andati a buon fine), e infine per attività di gioco.
 
-## Testing del motore
+## Test
 
 La suite di test è stata progettata per coprire tutti i casi d'uso principali del motore di gioco, con particolare attenzione ai casi limite e alle situazioni di errore.
 
@@ -247,33 +254,6 @@ test("CallBluff: se la dichiarazione è falsa il dichiarante prende la pila, alt
   })
 }
 ```
-
-## Testing
-
-Come già accennato nelle sezioni precedenti, i test sono stati fondamentali per garantire la qualità del codice e per facilitare il processo di sviluppo, specialmente durante la rifattorizzazione. La suite di test copre tutti i casi d'uso principali e molti casi limite.
-
-L'approccio utilizzato nei test segue il pattern Given-When-Then:
-- **Given**: Setup dello stato iniziale
-- **When**: Esecuzione del comando
-- **Then**: Verifica del risultato e degli eventi
-
-Questa struttura rende i test leggibili e manutenibili, facilitando la comprensione del comportamento atteso del sistema.
-
-I test utilizzano anche funzioni di supporto come `pileSize` per migliorare la leggibilità e ridurre la duplicazione di codice:
-
-```scala
-private def pileSize(st: GameState): Int = st.pile.allCards.size
-```
-
-Inoltre, sono stati definiti set di nomi predefiniti per diversi scenari:
-
-```scala
-private val names2 = Vector("Player1", "Player2")
-private val names3 = Vector("Player1", "Player2", "Player3")
-private val names4 = Vector("Player1", "Player2", "Player3", "Player4")
-```
-
-Questo approccio garantisce coerenza nei test e facilita la manutenzione.
 
 ## Contributi nella GUI
 Infine, gli ultimi contribuiti apportati hanno riguardato alcune parti dell'interfaccia grafica, la cui

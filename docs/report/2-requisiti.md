@@ -1,3 +1,8 @@
+---
+title: Requisiti
+nav_order: 2
+layout: default
+---
 # Requirement Specification
 
 ## Requisiti di business
@@ -27,19 +32,19 @@ Il gioco prevede inoltre:
 - log eventi per UX/debug,  
 - possibilità di giocare contro bot con comportamento riproducibile per test.  
 
-![Schermata Home](../images/home.png)
-
+---
 
 ## Requisiti funzionali
 
-### Lato utente
-- L’utente deve visualizzare la schermata iniziale dalla quale è possibile avviare una nuova partita, caricare una partita salvata o uscire dal gioco.  
+## Lato utente
+- L’utente deve visualizzare la schermata iniziale dalla quale è possibile avviare una nuova partita o uscire dal gioco.  
 - L’utente deve poter aprire una schermata delle regole che spiega le meccaniche di gioco e tornare al menu principale con un pulsante **Back to Main Menu**.  
 - L’utente deve poter avviare una nuova partita singola (vs bot) o una partita locale con più giocatori sullo stesso dispositivo.  
 - L’utente deve poter visualizzare la scena di gioco principale, comprensiva di: mano personale (carte scoperte/nascoste come previsto), conteggio delle carte degli avversari, mazzo residuo e pila degli scarti.  
 - L’utente deve poter selezionare *1..N* carte dalla propria mano per giocarle in un turno.  
 - L’utente deve poter dichiarare un *rank* (valore) associato alle carte giocate al momento del play.  
 - L’utente deve poter confermare l’azione di gioco tramite un pulsante **Play** o annullarla tramite **Clear/Cancel** prima dell’invio.  
+- L’utente deve poter passare il proprio turno usando un pulsante **Pass**.  
 - L’utente deve poter chiamare il bluff su una giocata avversaria usando un pulsante **Call Bluff**.  
 - L’utente deve poter vedere feedback immediato sull’esito di una chiamata di bluff (bluff vero/falso) e quale giocatore raccoglie la pila come conseguenza.  
 - L’utente deve poter osservare il log degli eventi di gioco (giocate, bluff, raccolte pila, timeout, vincitori) in un’area dedicata con altezza fissa che non altera la visuale delle carte.  
@@ -47,14 +52,12 @@ Il gioco prevede inoltre:
 - L’utente deve avere i controlli disabilitati durante il turno di un bot o durante il tempo di risoluzione di un evento (es. mentre si mostra l’esito di una chiamata).  
 - L’utente deve poter ricevere notifiche/testo chiaro quando prova a eseguire azioni illegittime (es. giocare carte non possedute).  
 - L’utente deve poter vedere lo stato della partita aggiornarsi in tempo reale quando le azioni vengono processate (mani, mazzo, pila, turno).  
-- L’utente deve poter terminare la partita e tornare al menu principale quando un giocatore esaurisce la mano (vincitore).  
-- L’utente deve poter chiedere una panoramica di debug (es. dump dello stato con `println` su console) per scopi di test/development se il gioco lo supporta.  
+- L’utente deve poter terminare la partita e tornare al menu principale quando un giocatore esaurisce la mano (vincitore).    
 - L’utente deve vincere la partita quando il proprio mazzo di mano è vuoto e ricevere una schermata di fine partita con risultato e statistiche essenziali.  
 
 ---
 
-### Sistema
-
+## Requisiti di sistema
 - Il sistema deve creare la scena di gioco principale, provvista di mano del giocatore, carte degli avversari (conteggiate), mazzo residuo e pila degli scarti.  
 - Il sistema deve gestire più schermate: quella iniziale (menu) e quella di gioco, rispettivamente all’avvio dell’applicazione e all’inizio della partita.  
 - Il sistema deve aggiornare lo stato della partita in base alle azioni dell’utente (giocata, pass, call bluff) e alle mosse del bot.  
@@ -62,18 +65,18 @@ Il gioco prevede inoltre:
 - Il sistema deve gestire il comportamento del bot in termini di scelte di gioco e bluff (casuali o semplificate).  
 - Il sistema deve rilevare la fine della partita quando un giocatore esaurisce la mano e aggiornare la schermata di vittoria.  
 
+
 ---
 
 ## Requisiti non funzionali
 
 - **Grafica**: il gioco deve fornire un’interfaccia testuale chiara e leggibile, con possibilità di estensione futura verso interfacce grafiche (es. ScalaFX).  
 - **Usabilità**: il gioco deve rispondere in maniera intuitiva alle azioni dell’utente, fornendo feedback immediato (es. conferma giocata, esito bluff, notifiche di errore).  
-- **Affidabilità**: il sistema deve garantire la coerenza dello stato di gioco anche in presenza di mosse illegittime, notificando l’utente senza compromettere la partita.  
+- **Affidabilità**: il sistema deve garantire la coerenza dello stato di gioco anche in presenza di mosse illegittime, notificando l’utente senza compromettere la partita. 
 
 ---
 
 ## Requisiti di implementazione
-
 - Utilizzo di:  
   - **Scala 3.3.0**  
   - **ScalaTest 3.3.x**  
@@ -88,6 +91,3 @@ Il gioco prevede inoltre:
   - modalità torneo,  
   - varianti di gioco,  
   - interfaccia grafica avanzata (ScalaFX o curses).  
-
-
- - [Home](../index.md)

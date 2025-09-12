@@ -1,3 +1,8 @@
+---
+title: Processo di sviluppo
+nav_order: 1
+layout: default
+---
 # Processo di sviluppo adottato
 
 Il gruppo ha adottato una modalità di sviluppo del progetto **agile** e *SCRUM-inspired*, meno stringente, in modo da permettere al team di adattarsi alle varie difficoltà incontrate durante l’implementazione del progetto.  
