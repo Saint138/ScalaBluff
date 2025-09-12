@@ -95,7 +95,7 @@ Questa routine costruisce uno stato iniziale "equo" cercando una distribuzione s
 - Si costruisce lo stato iniziale `st0` usando il mazzo mescolato e si invoca `Engine.step(st0, GameCommand.Deal)` per applicare la distribuzione.
 - Se la distribuzione non presenta quartetti (`!hasAnyQuartet(st1)`) viene immediatamente restituito quel risultato; altrimenti si conserva la prima distribuzione valida in `lastGood` come fallback.
 --
-# testing
+## testing
 ```scala
 class DeckAndDealingPropertySpec extends AnyFunSuite:
 
