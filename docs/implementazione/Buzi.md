@@ -96,6 +96,7 @@ Questa routine costruisce uno stato iniziale "equo" cercando una distribuzione s
 - Se la distribuzione non presenta quartetti (`!hasAnyQuartet(st1)`) viene immediatamente restituito quel risultato; altrimenti si conserva la prima distribuzione valida in `lastGood` come fallback.
 --
 # testing
+```scala
 class DeckAndDealingPropertySpec extends AnyFunSuite:
 
 	test("Deterministic shuffle same seed yields identical order") {
@@ -127,8 +128,7 @@ class DeckAndDealingPropertySpec extends AnyFunSuite:
 		}
 	}
 ```
-
-Breve nota: questo test verifica che lo `shuffle` sia deterministico col medesimo seed e che il dealing preservi tutte le carte e sia bilanciato.
+Spiegazione: il primo caso assicura che lo `shuffle` sia riproducibile quando si usa lo stesso seed; il secondo controlla che seed diversi producano permutazioni diverse (proprietà statistica); il terzo verifica che il `dealing` distribuisca tutte le 52 carte senza duplicati e con differenze di mano al massimo di una carta, garantendo equità nella distribuzione.
 
 MainGUI - avvio round e integrazione del dealing nella GUI:
 
@@ -246,4 +246,11 @@ object Hand:
 ```
 
 Spiegazione: `PlayerId` è un tipo opaco su `Int` per sicurezza di tipo; `Hand` è una semplice lista di `Card` con utilità per aggiungere/rimuovere carte. `remove` ritorna `Left` se la mano non contiene tutte le carte richieste.
+Spiegazione (più dettagliata ma breve):
+
+- `PlayerId` è definito come un tipo opaco `Int`. Questo evita confusioni con altri interi nel codice (migliora safety) pur rimanendo leggero a runtime.
+- A sua volta al interno del file è presente la classe `Hand` che contiene la lista di `Card` del giocatore e fornisce helper immutabili:
+	- `add` e `addAll` costruiscono nuove mani aggiungendo carte (immutabilità preservata).
+	- `size` è un accessorio rapido per il conteggio.
+	- `remove(cs: List[Card])` verifica che tutte le carte richieste siano presenti (contando eventuali duplicati) e restituisce `Right(newHand)` in caso positivo oppure `Left("cards not present")` se manca qualche carta.
 - [Torna a Implementazione](implementazione.md)
