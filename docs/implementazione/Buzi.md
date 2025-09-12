@@ -1,5 +1,5 @@
 ---
-title: Buzi
+title: Sajmir Buzi
 nav_order: 2
 parent: Implementazione
 ---
@@ -14,7 +14,7 @@ Il mio contributo al progetto si è concentrato principalmente sulle seguenti ar
 * [Dealing](#dealing-shuffler-e-integrazione-nel-motore): implementazione della logica di distribuzione round-robin e del flusso di initial deal usato dal CLI e dalla GUI.
 * [Shuffler](#dealing-shuffler-e-integrazione-nel-motore): interfaccia/implementazione per mescolare il mazzo (supporto a seed per testabilità) usata nella preparazione del `fairInitialDeal`.
 * [Integrazione con la GUI](#integrazione-con-la-gui): disabilitazione dei controlli utente durante il turno bot, log diagnostici e stampa dello stato per debug.
-* [Testing e debugging runtime](#testing-e-debugging-runtime): strumenti di logging, println e test manuali per verificare scenari di bluff e mosse consecutive del bot.
+* [Testing e debugging runtime](#testing): strumenti di logging, println e test manuali per verificare scenari del dealing della carte create.
 
 ---
 
@@ -57,7 +57,14 @@ private def deal(state: GameState): (GameState, List[GameEvent]) =
 		newState -> List(Dealt(sizes))
 ```
 
-CLI - preparazione del fair initial deal (loop di resample/shuffle):
+Spiegazione:
+
+Questo metodo implementa la distribuzione iniziale delle carte (comando `Deal`) in modo round-robin. I punti chiave sono:
+
+- Se il `deck` è vuoto viene restituito lo stato senza modifiche e nessun evento.
+- Si costruisce una mappa `emptyHands` con una mano vuota per ciascun `PlayerId` e si itera sul `deck` con `zipWithIndex` per assegnare la i-esima carta al giocatore `i % n`.
+- Le carte vengono aggiunte in testa alla lista della mano (`card :: accHands(pid).cards`), quindi l'ordine risultante dipende dall'ordine del `deck` e dall'operazione di pushing.
+- Alla fine `deck` viene svuotato e la funzione restituisce lo stato aggiornato più l'evento `Dealt` che contiene le dimensioni delle mani (utile alla UI per mostrare il conteggio delle carte).
 
 ```scala
 private def fairInitialDeal(numPlayers: Int, names: Vector[String]): (GameState, List[GameEvent], Int) =
@@ -80,6 +87,49 @@ private def fairInitialDeal(numPlayers: Int, names: Vector[String]): (GameState,
 	lastGood.get
 ```
 
+Spiegazione:
+
+Questa routine costruisce uno stato iniziale "equo" cercando una distribuzione senza quartetti (4 carte dello stesso rango nella stessa mano). I passi principali:
+
+- Viene eseguito un ciclo fino a `MaxAttempts` dove a ogni iterazione si crea un nuovo `shuffler` e si genera un `deck` tramite `Dealing.initialDeckForPlayers`.
+- Si costruisce lo stato iniziale `st0` usando il mazzo mescolato e si invoca `Engine.step(st0, GameCommand.Deal)` per applicare la distribuzione.
+- Se la distribuzione non presenta quartetti (`!hasAnyQuartet(st1)`) viene immediatamente restituito quel risultato; altrimenti si conserva la prima distribuzione valida in `lastGood` come fallback.
+--
+# testing
+class DeckAndDealingPropertySpec extends AnyFunSuite:
+
+	test("Deterministic shuffle same seed yields identical order") {
+		val d1 = Deck.standardShuffled(42L)
+		val d2 = Deck.standardShuffled(42L)
+		assert(d1 == d2)
+	}
+
+	test("Different seeds usually produce different permutation") {
+		val d1 = Deck.standardShuffled(1L)
+		val d2 = Deck.standardShuffled(2L)
+		assert(d1 != d2)
+	}
+
+	test("DealAll preserves all cards, no duplicates, balanced sizes") {
+		val playerCounts = Gen.chooseNum(1, 8)
+		forAll(playerCounts) { nPlayers =>
+			val players = (1 to nPlayers).toList.map(i => PlayerId(i))
+			val deck = Deck.standardShuffled(123L)
+			val (hands, leftover) = Dealing.dealAll(players, deck)
+
+			val allDealt = hands.values.flatMap(_.cards).toList
+			assert(allDealt.distinct.size == allDealt.size)
+			assert(allDealt.size == 52)
+			assert(leftover.size == 0)
+
+			val sizes = players.map(p => hands(p).cards.size)
+			assert(sizes.max - sizes.min <= 1)
+		}
+	}
+```
+
+Breve nota: questo test verifica che lo `shuffle` sia deterministico col medesimo seed e che il dealing preservi tutte le carte e sia bilanciato.
+
 MainGUI - avvio round e integrazione del dealing nella GUI:
 
 ```scala
@@ -90,6 +140,16 @@ private def startRound(): Unit =
 	game.currentState.foreach(stateRef.set)
 	startTimer(200L)
 ```
+
+Spiegazione:
+
+Questa routine coordina l'avvio di un round nella GUI:
+
+- Chiama `GameSetup.fairInitialDeal` (la funzione condivisa con la CLI) per ottenere lo stato con le mani già distribuite.
+- Aggiunge i clock ai giocatori con `GameClocks.withClocks(..., 60_000L)` per impostare il tempo per turno.
+- Sincronizza lo stato con il `GameController` (`game.setGameState`) e con il riferimento condiviso `stateRef` usato dalla `GameView`.
+- Avvia il `GameTimer` (`startTimer`) per far partire il tick dell'interfaccia (header/tempo) e la logica di timeout.
+
 
 ## GameView - rendering e interazione iniziale
 
@@ -115,6 +175,21 @@ private def appendEvent(ev: Engine.GameEvent): Unit = ev match {
 }
 ```
 
+Spiegazione:
+
+`renderHand` è responsabile di aggiornare la vista delle carte del giocatore corrente nella `GameView`:
+
+- Svuota il pannello delle carte (`handPane.children.clear()`) e ricrea i `CardNode` a partire dalla mano dello `state` corrente.
+- Ordina le carte per `rank` e `suit` per avere una presentazione coerente.
+- Per ogni `Card` crea un `CardNode` passando la callback `toggleSelect` che permette la selezione visiva della carta.
+- Dopo il rendering aggiorna lo stato dei pulsanti (`updateButtonsEnabled`) in base alla selezione corrente.
+
+`appendEvent` gestisce gli eventi provenienti dal motore (o dal bot manager) e li scrive nel `logArea` della UI:
+
+- Nell'esempio il caso `Dealt` costruisce una riga leggibile che mostra quanti elementi ha ricevuto ciascun giocatore.
+- Questo approccio separa la logica di presentazione dall'engine: l'engine genera eventi, la view li interpreta e li mostra.
+
+
 ## GameTimer - snippet del timer di turno
 
 L'implementazione del `GameTimer` utilizza uno scheduler per tickare il clock del giocatore corrente e chiamare la callback `onTimeout` una volta quando il clock scade:
@@ -136,4 +211,39 @@ private val task = new Runnable {
 }
 ```
 
+Spiegazione:
+
+Il `GameTimer` esegue periodicamente un task che aggiorna il clock del giocatore corrente e invia una singola notifica di timeout quando il contatore raggiunge zero.
+
+- All'inizio del task viene letto lo `stateRef` corrente e si valuta se c'è stato un cambio di turno: in tal caso il clock viene resettato a `perTurnMillis` per il nuovo giocatore.
+- Se il clock ha ancora tempo (`prevRem > 0`) viene decrementato usando `GameClocks.tickClock` con `tickMillis`.
+- Lo stato aggiornato viene scritto indietro nello `stateRef` condiviso affinché la UI e il motore possano leggerlo.
+- `lastRemaining` serve a evitare di inviare più volte la stessa notifica di timeout: la callback `onTimeout` viene chiamata solo quando si attraversa la soglia da >0 a <=0.
+
+## Player
+
+Estratto semplificato da `Player.scala` (adattato):
+
+```scala
+opaque type PlayerId = Int
+object PlayerId:
+	def apply(id: Int): PlayerId = id
+	extension (p: PlayerId) def value: Int = p
+
+case class Hand(cards: List[Card]):
+	def size: Int = cards.size
+	def add(c: Card): Hand = Hand(c :: cards)
+	def addAll(cs: List[Card]): Hand = Hand(cs ++ cards)
+	def remove(cs: List[Card]): Either[String, Hand] =
+		// rimuove solo se tutte le carte richieste sono presenti
+		if cs.forall(c => cards.count(_ == c) >= cs.count(_ == c))
+			Right(Hand(cards.diff(cs)))
+		else
+			Left("cards not present")
+
+object Hand:
+	val empty: Hand = Hand(Nil)
+```
+
+Spiegazione: `PlayerId` è un tipo opaco su `Int` per sicurezza di tipo; `Hand` è una semplice lista di `Card` con utilità per aggiungere/rimuovere carte. `remove` ritorna `Left` se la mano non contiene tutte le carte richieste.
 - [Torna a Implementazione](implementazione.md)

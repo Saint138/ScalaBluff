@@ -36,7 +36,7 @@ Il gioco prevede inoltre:
 
 ## Requisiti funzionali
 
-### Lato utente
+## Lato utente
 - L’utente deve visualizzare la schermata iniziale dalla quale è possibile avviare una nuova partita o uscire dal gioco.  
 - L’utente deve poter aprire una schermata delle regole che spiega le meccaniche di gioco e tornare al menu principale con un pulsante **Back to Main Menu**.  
 - L’utente deve poter avviare una nuova partita singola (vs bot) o una partita locale con più giocatori sullo stesso dispositivo.  
@@ -57,7 +57,7 @@ Il gioco prevede inoltre:
 
 ---
 
-### Requisiti di sistema
+## Requisiti di sistema
 - Il sistema deve creare la scena di gioco principale, provvista di mano del giocatore, carte degli avversari (conteggiate), mazzo residuo e pila degli scarti.  
 - Il sistema deve gestire più schermate: quella iniziale (menu) e quella di gioco, rispettivamente all’avvio dell’applicazione e all’inizio della partita.  
 - Il sistema deve aggiornare lo stato della partita in base alle azioni dell’utente (giocata, pass, call bluff) e alle mosse del bot.  
@@ -73,6 +73,7 @@ Il gioco prevede inoltre:
 - **Grafica**: il gioco deve fornire un’interfaccia testuale chiara e leggibile, con possibilità di estensione futura verso interfacce grafiche (es. ScalaFX).  
 - **Usabilità**: il gioco deve rispondere in maniera intuitiva alle azioni dell’utente, fornendo feedback immediato (es. conferma giocata, esito bluff, notifiche di errore).  
 - **Affidabilità**: il sistema deve garantire la coerenza dello stato di gioco anche in presenza di mosse illegittime, notificando l’utente senza compromettere la partita. 
+
 ---
 
 ## Requisiti di implementazione

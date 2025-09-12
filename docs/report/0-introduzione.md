@@ -20,13 +20,15 @@ Al turno successivo, il giocatore seguente può scegliere se:
 Se viene chiamato il *dubito* e le carte giocate corrispondono effettivamente al valore dichiarato, il giocatore che ha dubitato riceve una penalità, ovvero deve raccogliere tutte le carte presenti nella pila sul tavolo.  
 In caso contrario, se le carte non corrispondono al valore dichiarato, la penalità ricade sul giocatore che aveva effettuato la dichiarazione, che dovrà quindi raccogliere tutte le carte della pila.  
 
+---
 
-
-# Obiettivo del gioco
+## Obiettivo del gioco
 
 L’obiettivo del gioco è terminare la propria pila di carte; in tal caso la partita si conclude e viene decretato il vincitore.  
 
-# Requisiti Obbligatori
+---
+
+## Requisiti Obbligatori
 
 - Gestione del mazzo e distribuzione iniziale delle carte  
 - Gestione dei turni e delle dichiarazioni  
@@ -35,16 +37,18 @@ L’obiettivo del gioco è terminare la propria pila di carte; in tal caso la pa
 - Interfaccia testuale semplice e funzionale  
 - Test tramite DSL per la modellazione degli stati del gioco  
 
+---
 
-# Requisiti Opzionali
+## Requisiti Opzionali
 
 - Modalità “torneo” con più partite e classifica finale  
 - Introduzione di un bot (logiche di bluff semplificate o casuali)  
 - Statistiche di gioco (bluff riusciti, errori di accusa, vittorie)  
 - Interfaccia avanzata con ScalaFX o curses  
 
+---
 
-# Contributors
+## Contributors
 
 - Gioele Santi  
 - Margherita Balzoni  
