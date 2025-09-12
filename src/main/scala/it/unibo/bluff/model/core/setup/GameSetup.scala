@@ -1,4 +1,4 @@
-package it.unibo.bluff.setup
+package it.unibo.bluff.model.core.setup
 
 import it.unibo.bluff.engine.Engine
 import it.unibo.bluff.engine.Engine.{GameCommand, GameEvent}

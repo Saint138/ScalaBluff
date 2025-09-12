@@ -1,4 +1,4 @@
-package it.unibo.bluff.model.state
+package it.unibo.bluff.model.core.state
 
 import it.unibo.bluff.model.*
 
