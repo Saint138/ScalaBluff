@@ -14,7 +14,7 @@ Il mio contributo al progetto si è concentrato principalmente sulle seguenti ar
 * [Dealing](#dealing-shuffler-e-integrazione-nel-motore): implementazione della logica di distribuzione round-robin e del flusso di initial deal usato dal CLI e dalla GUI.
 * [Shuffler](#dealing-shuffler-e-integrazione-nel-motore): interfaccia/implementazione per mescolare il mazzo (supporto a seed per testabilità) usata nella preparazione del `fairInitialDeal`.
 * [Integrazione con la GUI](#integrazione-con-la-gui): disabilitazione dei controlli utente durante il turno bot, log diagnostici e stampa dello stato per debug.
-* [Testing e debugging runtime](#testing-e-debugging-runtime): strumenti di logging, println e test manuali per verificare scenari di bluff e mosse consecutive del bot.
+* [Testing e debugging runtime](#testing): strumenti di logging, println e test manuali per verificare scenari del dealing della carte create.
 
 ---
 
@@ -66,13 +66,6 @@ Questo metodo implementa la distribuzione iniziale delle carte (comando `Deal`) 
 - Le carte vengono aggiunte in testa alla lista della mano (`card :: accHands(pid).cards`), quindi l'ordine risultante dipende dall'ordine del `deck` e dall'operazione di pushing.
 - Alla fine `deck` viene svuotato e la funzione restituisce lo stato aggiornato più l'evento `Dealt` che contiene le dimensioni delle mani (utile alla UI per mostrare il conteggio delle carte).
 
-Considerazioni:
-
-- Il metodo è deterministico rispetto all'ordine del `deck` fornito (quindi utilizzare uno `Shuffler` con seed consente test riproducibili).
-- Poiché si usano liste e aggiornamenti immutabili, la complessità è lineare rispetto al numero di carte.
-
-CLI - preparazione del fair initial deal (loop di resample/shuffle):
-
 ```scala
 private def fairInitialDeal(numPlayers: Int, names: Vector[String]): (GameState, List[GameEvent], Int) =
 	val MaxAttempts = 100
@@ -101,11 +94,41 @@ Questa routine costruisce uno stato iniziale "equo" cercando una distribuzione s
 - Viene eseguito un ciclo fino a `MaxAttempts` dove a ogni iterazione si crea un nuovo `shuffler` e si genera un `deck` tramite `Dealing.initialDeckForPlayers`.
 - Si costruisce lo stato iniziale `st0` usando il mazzo mescolato e si invoca `Engine.step(st0, GameCommand.Deal)` per applicare la distribuzione.
 - Se la distribuzione non presenta quartetti (`!hasAnyQuartet(st1)`) viene immediatamente restituito quel risultato; altrimenti si conserva la prima distribuzione valida in `lastGood` come fallback.
+--
+# testing
+class DeckAndDealingPropertySpec extends AnyFunSuite:
 
-Considerazioni:
+	test("Deterministic shuffle same seed yields identical order") {
+		val d1 = Deck.standardShuffled(42L)
+		val d2 = Deck.standardShuffled(42L)
+		assert(d1 == d2)
+	}
 
-- Il meccanismo di resample aiuta ad evitare scenari iniziali troppo sbilanciati. Per determinismo nei test è importante passare uno `Shuffler` con seed noto.
-- `ListDeck` è un wrapper locale per il tipo di mazzo usato: il codice assume che `Dealing.initialDeckForPlayers` ritorni un `ListDeck` con la sequenza delle carte.
+	test("Different seeds usually produce different permutation") {
+		val d1 = Deck.standardShuffled(1L)
+		val d2 = Deck.standardShuffled(2L)
+		assert(d1 != d2)
+	}
+
+	test("DealAll preserves all cards, no duplicates, balanced sizes") {
+		val playerCounts = Gen.chooseNum(1, 8)
+		forAll(playerCounts) { nPlayers =>
+			val players = (1 to nPlayers).toList.map(i => PlayerId(i))
+			val deck = Deck.standardShuffled(123L)
+			val (hands, leftover) = Dealing.dealAll(players, deck)
+
+			val allDealt = hands.values.flatMap(_.cards).toList
+			assert(allDealt.distinct.size == allDealt.size)
+			assert(allDealt.size == 52)
+			assert(leftover.size == 0)
+
+			val sizes = players.map(p => hands(p).cards.size)
+			assert(sizes.max - sizes.min <= 1)
+		}
+	}
+```
+
+Breve nota: questo test verifica che lo `shuffle` sia deterministico col medesimo seed e che il dealing preservi tutte le carte e sia bilanciato.
 
 MainGUI - avvio round e integrazione del dealing nella GUI:
 
@@ -127,10 +150,6 @@ Questa routine coordina l'avvio di un round nella GUI:
 - Sincronizza lo stato con il `GameController` (`game.setGameState`) e con il riferimento condiviso `stateRef` usato dalla `GameView`.
 - Avvia il `GameTimer` (`startTimer`) per far partire il tick dell'interfaccia (header/tempo) e la logica di timeout.
 
-Considerazioni:
-
-- La separazione tra stato del motore (`GameState`) e il `stateRef` della GUI consente di tenere l'UI sincronizzata senza farlo dipendere direttamente dalla logica interna dell'engine.
-- Qui vengono anche create le condizioni per disabilitare i controlli utente quando necessario (es. overlay, bot), ma la responsabilità di gestire i bot è altrove.
 
 ## GameView - rendering e interazione iniziale
 
@@ -170,10 +189,6 @@ Spiegazione:
 - Nell'esempio il caso `Dealt` costruisce una riga leggibile che mostra quanti elementi ha ricevuto ciascun giocatore.
 - Questo approccio separa la logica di presentazione dall'engine: l'engine genera eventi, la view li interpreta e li mostra.
 
-Considerazioni:
-
-- Per evitare condizioni di race la view legge lo stato tramite `stateRef.get()` e applica le modifiche sul thread della UI (`Platform.runLater` quando necessario).
-- Il `CardNode` dovrebbe gestire la grafica e la selezione senza modificare direttamente lo stato di gioco; le azioni effettive vengono inviate tramite `dispatch`.
 
 ## GameTimer - snippet del timer di turno
 
@@ -205,9 +220,30 @@ Il `GameTimer` esegue periodicamente un task che aggiorna il clock del giocatore
 - Lo stato aggiornato viene scritto indietro nello `stateRef` condiviso affinché la UI e il motore possano leggerlo.
 - `lastRemaining` serve a evitare di inviare più volte la stessa notifica di timeout: la callback `onTimeout` viene chiamata solo quando si attraversa la soglia da >0 a <=0.
 
-Considerazioni:
+## Player
 
-- Poiché il timer scrive nello `stateRef`, è importante evitare operazioni che possano introdurre inconsistenze; il motore (Engine) rimane responsabile dell'applicazione delle regole quando riceve il comando `Timeout`.
-- Il task è protetto con try/catch per evitare che eccezioni non gestite fermino lo scheduler.
+Estratto semplificato da `Player.scala` (adattato):
 
+```scala
+opaque type PlayerId = Int
+object PlayerId:
+	def apply(id: Int): PlayerId = id
+	extension (p: PlayerId) def value: Int = p
+
+case class Hand(cards: List[Card]):
+	def size: Int = cards.size
+	def add(c: Card): Hand = Hand(c :: cards)
+	def addAll(cs: List[Card]): Hand = Hand(cs ++ cards)
+	def remove(cs: List[Card]): Either[String, Hand] =
+		// rimuove solo se tutte le carte richieste sono presenti
+		if cs.forall(c => cards.count(_ == c) >= cs.count(_ == c))
+			Right(Hand(cards.diff(cs)))
+		else
+			Left("cards not present")
+
+object Hand:
+	val empty: Hand = Hand(Nil)
+```
+
+Spiegazione: `PlayerId` è un tipo opaco su `Int` per sicurezza di tipo; `Hand` è una semplice lista di `Card` con utilità per aggiungere/rimuovere carte. `remove` ritorna `Left` se la mano non contiene tutte le carte richieste.
 - [Torna a Implementazione](implementazione.md)
