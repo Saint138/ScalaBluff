@@ -27,9 +27,14 @@ class RandomBot(val id: PlayerId):
       val numCards = 1 + rng.nextInt(maxCards) // da 1 a maxCards
       val chosenCards = rng.shuffle(hand).take(numCards)
 
+      val availableRanks: Seq[Rank] =
+        state.fixedDeclaredRank.toSeq ++
+          state.hands.values.flatMap(_.cards.map(_.rank)).toSet.toSeq
+
       val declared = state.fixedDeclaredRank.getOrElse(
-        Rank.values(rng.nextInt(Rank.values.size))
+        availableRanks(rng.nextInt(availableRanks.size))
       )
+
 
       Play(id, chosenCards, declared)
 
