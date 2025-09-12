@@ -57,6 +57,20 @@ private def deal(state: GameState): (GameState, List[GameEvent]) =
 		newState -> List(Dealt(sizes))
 ```
 
+Spiegazione:
+
+Questo metodo implementa la distribuzione iniziale delle carte (comando `Deal`) in modo round-robin. I punti chiave sono:
+
+- Se il `deck` è vuoto viene restituito lo stato senza modifiche e nessun evento.
+- Si costruisce una mappa `emptyHands` con una mano vuota per ciascun `PlayerId` e si itera sul `deck` con `zipWithIndex` per assegnare la i-esima carta al giocatore `i % n`.
+- Le carte vengono aggiunte in testa alla lista della mano (`card :: accHands(pid).cards`), quindi l'ordine risultante dipende dall'ordine del `deck` e dall'operazione di pushing.
+- Alla fine `deck` viene svuotato e la funzione restituisce lo stato aggiornato più l'evento `Dealt` che contiene le dimensioni delle mani (utile alla UI per mostrare il conteggio delle carte).
+
+Considerazioni:
+
+- Il metodo è deterministico rispetto all'ordine del `deck` fornito (quindi utilizzare uno `Shuffler` con seed consente test riproducibili).
+- Poiché si usano liste e aggiornamenti immutabili, la complessità è lineare rispetto al numero di carte.
+
 CLI - preparazione del fair initial deal (loop di resample/shuffle):
 
 ```scala
@@ -80,6 +94,19 @@ private def fairInitialDeal(numPlayers: Int, names: Vector[String]): (GameState,
 	lastGood.get
 ```
 
+Spiegazione:
+
+Questa routine costruisce uno stato iniziale "equo" cercando una distribuzione senza quartetti (4 carte dello stesso rango nella stessa mano). I passi principali:
+
+- Viene eseguito un ciclo fino a `MaxAttempts` dove a ogni iterazione si crea un nuovo `shuffler` e si genera un `deck` tramite `Dealing.initialDeckForPlayers`.
+- Si costruisce lo stato iniziale `st0` usando il mazzo mescolato e si invoca `Engine.step(st0, GameCommand.Deal)` per applicare la distribuzione.
+- Se la distribuzione non presenta quartetti (`!hasAnyQuartet(st1)`) viene immediatamente restituito quel risultato; altrimenti si conserva la prima distribuzione valida in `lastGood` come fallback.
+
+Considerazioni:
+
+- Il meccanismo di resample aiuta ad evitare scenari iniziali troppo sbilanciati. Per determinismo nei test è importante passare uno `Shuffler` con seed noto.
+- `ListDeck` è un wrapper locale per il tipo di mazzo usato: il codice assume che `Dealing.initialDeckForPlayers` ritorni un `ListDeck` con la sequenza delle carte.
+
 MainGUI - avvio round e integrazione del dealing nella GUI:
 
 ```scala
@@ -90,6 +117,20 @@ private def startRound(): Unit =
 	game.currentState.foreach(stateRef.set)
 	startTimer(200L)
 ```
+
+Spiegazione:
+
+Questa routine coordina l'avvio di un round nella GUI:
+
+- Chiama `GameSetup.fairInitialDeal` (la funzione condivisa con la CLI) per ottenere lo stato con le mani già distribuite.
+- Aggiunge i clock ai giocatori con `GameClocks.withClocks(..., 60_000L)` per impostare il tempo per turno.
+- Sincronizza lo stato con il `GameController` (`game.setGameState`) e con il riferimento condiviso `stateRef` usato dalla `GameView`.
+- Avvia il `GameTimer` (`startTimer`) per far partire il tick dell'interfaccia (header/tempo) e la logica di timeout.
+
+Considerazioni:
+
+- La separazione tra stato del motore (`GameState`) e il `stateRef` della GUI consente di tenere l'UI sincronizzata senza farlo dipendere direttamente dalla logica interna dell'engine.
+- Qui vengono anche create le condizioni per disabilitare i controlli utente quando necessario (es. overlay, bot), ma la responsabilità di gestire i bot è altrove.
 
 ## GameView - rendering e interazione iniziale
 
@@ -115,6 +156,25 @@ private def appendEvent(ev: Engine.GameEvent): Unit = ev match {
 }
 ```
 
+Spiegazione:
+
+`renderHand` è responsabile di aggiornare la vista delle carte del giocatore corrente nella `GameView`:
+
+- Svuota il pannello delle carte (`handPane.children.clear()`) e ricrea i `CardNode` a partire dalla mano dello `state` corrente.
+- Ordina le carte per `rank` e `suit` per avere una presentazione coerente.
+- Per ogni `Card` crea un `CardNode` passando la callback `toggleSelect` che permette la selezione visiva della carta.
+- Dopo il rendering aggiorna lo stato dei pulsanti (`updateButtonsEnabled`) in base alla selezione corrente.
+
+`appendEvent` gestisce gli eventi provenienti dal motore (o dal bot manager) e li scrive nel `logArea` della UI:
+
+- Nell'esempio il caso `Dealt` costruisce una riga leggibile che mostra quanti elementi ha ricevuto ciascun giocatore.
+- Questo approccio separa la logica di presentazione dall'engine: l'engine genera eventi, la view li interpreta e li mostra.
+
+Considerazioni:
+
+- Per evitare condizioni di race la view legge lo stato tramite `stateRef.get()` e applica le modifiche sul thread della UI (`Platform.runLater` quando necessario).
+- Il `CardNode` dovrebbe gestire la grafica e la selezione senza modificare direttamente lo stato di gioco; le azioni effettive vengono inviate tramite `dispatch`.
+
 ## GameTimer - snippet del timer di turno
 
 L'implementazione del `GameTimer` utilizza uno scheduler per tickare il clock del giocatore corrente e chiamare la callback `onTimeout` una volta quando il clock scade:
@@ -135,5 +195,19 @@ private val task = new Runnable {
 		if (afterRem <= 0L && lastRemaining.getOrElse(current, Long.MaxValue) > 0L) onTimeout(current)
 }
 ```
+
+Spiegazione:
+
+Il `GameTimer` esegue periodicamente un task che aggiorna il clock del giocatore corrente e invia una singola notifica di timeout quando il contatore raggiunge zero.
+
+- All'inizio del task viene letto lo `stateRef` corrente e si valuta se c'è stato un cambio di turno: in tal caso il clock viene resettato a `perTurnMillis` per il nuovo giocatore.
+- Se il clock ha ancora tempo (`prevRem > 0`) viene decrementato usando `GameClocks.tickClock` con `tickMillis`.
+- Lo stato aggiornato viene scritto indietro nello `stateRef` condiviso affinché la UI e il motore possano leggerlo.
+- `lastRemaining` serve a evitare di inviare più volte la stessa notifica di timeout: la callback `onTimeout` viene chiamata solo quando si attraversa la soglia da >0 a <=0.
+
+Considerazioni:
+
+- Poiché il timer scrive nello `stateRef`, è importante evitare operazioni che possano introdurre inconsistenze; il motore (Engine) rimane responsabile dell'applicazione delle regole quando riceve il comando `Timeout`.
+- Il task è protetto con try/catch per evitare che eccezioni non gestite fermino lo scheduler.
 
 - [Torna a Implementazione](implementazione.md)
