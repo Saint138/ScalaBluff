@@ -13,7 +13,7 @@ parent: Implementazione
 
 Il mio contributo al progetto si è concentrato principalmente sulle seguenti aree:
 
-- [Creazione dell'entita Player](#player): creazione dell'entità player che serviranno per effettuare il gioco tramite mosse|regole definite dai colleghi nell' engine del gioco.
+- [Creazione dell'entita Player](#player): creazione dell'entità player che serviranno per effettuare il gioco tramite mosse/regole definite dai colleghi nell' engine del gioco.
 - [Dealing](#dealing-shuffler-e-integrazione-nel-motore): implementazione della logica di distribuzione round-robin e del flusso di initial deal usato dal CLI e dalla GUI.
 - [Shuffler](#dealing-shuffler-e-integrazione-nel-motore): interfaccia/implementazione per mescolare il mazzo (supporto a seed per testabilità) usata nella preparazione del `fairInitialDeal`.
 - [Integrazione con la GUI](#integrazione-con-la-gui): disabilitazione dei controlli utente durante il turno bot, log diagnostici e stampa dello stato per debug.
