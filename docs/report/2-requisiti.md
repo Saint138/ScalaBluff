@@ -1,7 +1,7 @@
 ---
 title: Requisiti
 nav_order: 2
-parent: Report
+layout: default
 ---
 # Requirement Specification
 

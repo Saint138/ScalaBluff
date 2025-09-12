@@ -1,13 +1,13 @@
-title: "ScalaBluff"
-description: Project Documentation
-remote_theme: just-the-docs/just-the-docs@v0.10.0
+title: "Home"
+description: "Project Documentation"
+remote_theme: carlosperate/jekyll-theme-rtd
+
+# Impostazioni specifiche del tema RTD
+site_author: "ScalaBluff Team"
+repo_url: "https://github.com/Saint138/ScalaBluff"
+edit_on_github: true
+github_docs_folder: true
+sticky_navigation: true
+prev_next_buttons_location: bottom
 search_enabled: true
-color_scheme: dark
-nav_enabled: true
-
-nav_external_links:
-  - title: Repository on GitHub
-    url: https://github.com/Saint138/ScalaBluff
-
-mermaid:
-  version: "9.1.3"
+hljs_style: github-gist

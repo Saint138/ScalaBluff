@@ -1,7 +1,7 @@
 ---
 title: Introduzione
 nav_order: 0
-parent: Report
+layout: default
 ---
 
 # Introduzione
