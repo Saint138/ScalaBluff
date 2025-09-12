@@ -1,7 +1,7 @@
 ---
 title: Processo di sviluppo
 nav_order: 1
-parent: Report
+layout: default
 ---
 # Processo di sviluppo adottato
 

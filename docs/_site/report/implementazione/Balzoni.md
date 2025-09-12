@@ -1,2 +1,0 @@
-
-- [Torna a Implementazione](implementazione.md)

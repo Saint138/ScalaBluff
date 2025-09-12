@@ -1,16 +1,13 @@
 ---
-title: Home
-layout: home
-nav_order: 0
-description: ""
-permalink: /
+layout: default
+title: "Home"
+nav_exclude: true
+
 ---
 
 # ScalaBluff
-{: .fs-9 }
 
-Implementazione, in Scala del gioco "Dubito" (ScalaBluff) per il corso di "Paradigmi di Programmazione e Sviluppo".
-{: .fs-6 .fw-300 }
+Implementazione, in Scala, del gioco "Dubito" (ScalaBluff) per il corso di "Paradigmi di Programmazione e Sviluppo".
 
-[Documentazione](report/0-introduzione.md){: .btn .btn-primary .fs-5 .mb-4 .mb-md-0 .mr-2 }
-[Repository GitHub](https://github.com/Saint138/ScalaBluff){: .btn .fs-5 .mb-4 .mb-md-0 }
+- **Documentazione**: [Introduzione]({{ '/report/0-introduzione' | relative_url }})
+- **Repository GitHub**: <https://github.com/Saint138/ScalaBluff>

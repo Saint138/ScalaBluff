@@ -1,7 +1,7 @@
 ---
-title: Gioele Santi
+title: Santi
 nav_order: 1
-parent: Implementazione
+layout: default
 ---
 
 # Implementazione - Gioele Santi
