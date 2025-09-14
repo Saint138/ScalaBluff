@@ -5,7 +5,6 @@ import scalafx.scene.control.{Alert, TextArea}
 
 object StatsDialog {
   def show(header: String, content: String): Unit = {
-    println("schermata stats")  // conferma chiamata
     Platform.runLater {
       val dlg = new Alert(Alert.AlertType.Information) {
         headerText = header

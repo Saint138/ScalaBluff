@@ -1,6 +1,5 @@
 package it.unibo.bluff.model
 
-import it.unibo.bluff.model.*
 import it.unibo.bluff.model.core.*
 
 /** Strategia ordine turni (permette estensioni future: reverse, skip, ecc.) */
