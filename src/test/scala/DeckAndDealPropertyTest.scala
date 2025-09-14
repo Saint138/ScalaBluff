@@ -2,9 +2,8 @@ package it.unibo.bluff.model.state
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks.*
 import org.scalacheck.Gen
-import it.unibo.bluff.model.Deck
 import it.unibo.bluff.model.PlayerId
-import it.unibo.bluff.model.Dealing
+import it.unibo.bluff.model.cards.{Dealing, Deck}
 
 class DeckAndDealingPropertySpec extends AnyFunSuite:
 

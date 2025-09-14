@@ -1,6 +1,7 @@
 package it.unibo.bluff.view.gui.components
 
-import it.unibo.bluff.model.{Rank, Hand}
+import it.unibo.bluff.model.Hand
+import it.unibo.bluff.model.cards.Rank
 import it.unibo.bluff.model.core.state.GameState
 import scalafx.scene.control.{Button, ComboBox, Label}
 import scalafx.scene.layout.VBox

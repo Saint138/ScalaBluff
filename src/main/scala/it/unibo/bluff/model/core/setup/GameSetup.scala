@@ -5,6 +5,7 @@ import it.unibo.bluff.model.core.engine.Engine.{GameCommand, GameEvent}
 import it.unibo.bluff.model.*
 import it.unibo.bluff.model.core.state.GameState
 import it.unibo.bluff.model.TurnOrder.given
+import it.unibo.bluff.model.cards.{Dealing, ListDeck, Shuffler}
 //game setup for gui section , to be improved if necessary..
 object GameSetup {
 

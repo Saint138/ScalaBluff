@@ -2,9 +2,9 @@ import org.scalatest.funsuite.AnyFunSuite
 import it.unibo.bluff.model.core.engine.GameEngine
 import it.unibo.bluff.model.core.engine.GameEngine.GameCommand
 import it.unibo.bluff.model.*
+import it.unibo.bluff.model.cards.Rank
 import it.unibo.bluff.model.state.*
 import it.unibo.bluff.model.util.RNG
-import it.unibo.bluff.model.Rank
 import it.unibo.bluff.model.core.state.GameState
 
 // TurnOrder implicito

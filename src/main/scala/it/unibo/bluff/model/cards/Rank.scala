@@ -1,4 +1,6 @@
-package it.unibo.bluff.model
+package it.unibo.bluff.model.cards
+
+import it.unibo.bluff.model.cards.Rank
 
 enum Rank {
   case Asso, Due, Tre, Quattro, Cinque, Sei, Sette, Otto, Nove, Dieci, Jack, Queen, King

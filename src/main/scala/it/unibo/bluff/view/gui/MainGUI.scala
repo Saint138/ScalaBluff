@@ -1,5 +1,6 @@
-package gui
+package it.unibo.bluff.view.gui
 
+import gui.GUIController
 import scalafx.application.JFXApp3
 import scalafx.scene.Scene
 import scalafx.stage.StageStyle
@@ -22,7 +23,6 @@ object MainGUI extends JFXApp3 {
     }
     stage.centerOnScreen()
     stage.onCloseRequest = _ => {
-      GUIController.stopTimer()
-      GUIController.stopBot()
+      GUIController.shutdown()
     }
 }

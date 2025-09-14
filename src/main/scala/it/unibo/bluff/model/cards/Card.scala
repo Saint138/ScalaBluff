@@ -1,4 +1,6 @@
-package it.unibo.bluff.model
+package it.unibo.bluff.model.cards
+
+import it.unibo.bluff.model.cards.{Card, Rank, Suit}
 
 /** Carta standard da poker: rango + seme */
 final case class Card(rank: Rank, suit: Suit)

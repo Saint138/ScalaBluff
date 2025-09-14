@@ -2,6 +2,7 @@ package it.unibo.bluff.model.core.engine
 
 import it.unibo.bluff.model.*
 import it.unibo.bluff.model.TurnOrder
+import it.unibo.bluff.model.cards.{Card, Rank}
 import it.unibo.bluff.model.core.state.{Declaration, GameState}
 
 object Engine:

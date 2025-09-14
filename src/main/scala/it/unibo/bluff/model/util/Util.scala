@@ -1,6 +1,6 @@
 package it.unibo.bluff.model.util
 
-import it.unibo.bluff.model.Card
+import it.unibo.bluff.model.cards.Card
 
 trait RNG:
   def nextInt(bound: Int): Int

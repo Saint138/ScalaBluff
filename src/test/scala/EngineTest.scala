@@ -2,6 +2,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import it.unibo.bluff.model.core.engine.Engine
 import it.unibo.bluff.model.core.engine.Engine.GameCommand
 import it.unibo.bluff.model.*
+import it.unibo.bluff.model.cards.Rank
 import it.unibo.bluff.model.core.state.GameState
 import it.unibo.bluff.model.state.*
 import it.unibo.bluff.model.util.RNG

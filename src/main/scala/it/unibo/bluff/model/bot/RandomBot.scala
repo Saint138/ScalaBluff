@@ -5,6 +5,7 @@ import it.unibo.bluff.model.core.state.*
 import it.unibo.bluff.model.core.engine.Engine.GameCommand.{CallBluff, Play}
 import it.unibo.bluff.model.core.engine.Engine.GameCommand
 import it.unibo.bluff.model.TurnOrder.given
+import it.unibo.bluff.model.cards.Rank
 
 import scala.util.Random
 

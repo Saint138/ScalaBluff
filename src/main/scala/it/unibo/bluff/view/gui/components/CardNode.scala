@@ -1,6 +1,6 @@
 package it.unibo.bluff.view.gui.components
 
-import it.unibo.bluff.model.{Card, Suit, Rank}
+import it.unibo.bluff.model.cards.{Card, Rank, Suit}
 import scalafx.scene.layout.StackPane
 import scalafx.geometry.Insets
 import scalafx.scene.control.Label

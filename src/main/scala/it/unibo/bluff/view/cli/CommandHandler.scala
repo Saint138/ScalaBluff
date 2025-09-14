@@ -4,6 +4,7 @@ import it.unibo.bluff.model.core.engine.Engine
 import it.unibo.bluff.model.core.engine.Engine.GameCommand
 import it.unibo.bluff.model.core.engine.Engine.GameCommand.Play
 import it.unibo.bluff.model.*
+import it.unibo.bluff.model.cards.{Card, Rank}
 import it.unibo.bluff.model.core.state.*
 
 object CommandHandler:

@@ -4,7 +4,9 @@ import it.unibo.bluff.controller.GameController
 import it.unibo.bluff.model.core.engine.Engine
 import it.unibo.bluff.model.core.engine.Engine.{GameCommand, GameEvent}
 import it.unibo.bluff.model.*
+import it.unibo.bluff.model.cards.{Dealing, ListDeck, Shuffler}
 import it.unibo.bluff.model.core.state.GameState
+
 import scala.io.StdIn
 
 object CLI:

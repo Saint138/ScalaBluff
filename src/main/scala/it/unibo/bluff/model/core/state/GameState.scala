@@ -1,6 +1,7 @@
 package it.unibo.bluff.model.core.state
 
 import it.unibo.bluff.model.*
+import it.unibo.bluff.model.cards.{Card, Dealing, ListDeck, Rank}
 
 /** Dichiarazione effettuata: rango dichiarato e carte coperte giocate */
 final case class Declaration(player: PlayerId, declared: Rank, hiddenCards: List[Card])

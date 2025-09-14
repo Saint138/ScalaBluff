@@ -1,5 +1,6 @@
 import org.scalatest.funsuite.AnyFunSuite
 import it.unibo.bluff.model.*
+import it.unibo.bluff.model.cards.{Card, Rank, Suit}
 
 final class PlayerHandsSpec extends AnyFunSuite {
 

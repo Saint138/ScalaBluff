@@ -1,4 +1,5 @@
-package it.unibo.bluff.model
+package it.unibo.bluff.model.cards
+
 
 import scala.util.Random
 

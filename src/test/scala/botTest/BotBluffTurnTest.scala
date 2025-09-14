@@ -2,6 +2,7 @@ package botTest
 
 import it.unibo.bluff.model.*
 import it.unibo.bluff.model.TurnOrder.given
+import it.unibo.bluff.model.cards.{Card, Rank, Suit}
 import it.unibo.bluff.model.core.engine.Engine
 import it.unibo.bluff.model.core.engine.Engine.*
 import it.unibo.bluff.model.core.engine.Engine.GameEvent.*

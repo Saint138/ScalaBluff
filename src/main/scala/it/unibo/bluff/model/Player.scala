@@ -1,5 +1,7 @@
 package it.unibo.bluff.model
 
+import it.unibo.bluff.model.cards.Card
+
 opaque type PlayerId = Int
 object PlayerId:
   def apply(i:Int): PlayerId = i

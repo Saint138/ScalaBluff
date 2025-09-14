@@ -6,6 +6,7 @@ import it.unibo.bluff.model.core.engine.Engine
 import it.unibo.bluff.model.core.engine.Engine.GameCommand.*
 import it.unibo.bluff.model.core.engine.Engine.GameEvent
 import it.unibo.bluff.model.TurnOrder.given
+import it.unibo.bluff.model.cards.{Card, Rank, Suit}
 
 class BotVictoryTest extends AnyFunSuite {
 

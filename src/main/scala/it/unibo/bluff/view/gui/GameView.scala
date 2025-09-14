@@ -1,7 +1,6 @@
 package it.unibo.bluff.view.gui
 
 import java.util.concurrent.atomic.AtomicReference
-
 import it.unibo.bluff.model.core.engine.Engine
 import it.unibo.bluff.model.core.engine.Engine.{GameCommand, GameEvent}
 import it.unibo.bluff.model.*
@@ -9,7 +8,7 @@ import it.unibo.bluff.model.core.state.GameState
 import it.unibo.bluff.model.TurnOrder.given
 import it.unibo.bluff.view.gui.components.*
 import it.unibo.bluff.model.bot.BotManager
-
+import it.unibo.bluff.model.cards.Card
 import scalafx.Includes.*
 import scalafx.animation.{KeyFrame, Timeline}
 import scalafx.application.Platform

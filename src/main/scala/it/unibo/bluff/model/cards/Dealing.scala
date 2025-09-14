@@ -1,4 +1,6 @@
-package it.unibo.bluff.model
+package it.unibo.bluff.model.cards
+
+import it.unibo.bluff.model.*
 
 /** Utilities for initial distribution of cards to players. */
 object Dealing:

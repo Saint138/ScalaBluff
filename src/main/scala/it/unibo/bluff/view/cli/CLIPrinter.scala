@@ -1,6 +1,7 @@
 package it.unibo.bluff.view.cli
 
 import it.unibo.bluff.model.*
+import it.unibo.bluff.model.cards.Rank
 import it.unibo.bluff.model.core.engine.Engine.GameEvent
 import it.unibo.bluff.model.core.state.GameState
 

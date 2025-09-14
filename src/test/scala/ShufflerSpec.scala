@@ -1,5 +1,6 @@
 import org.scalatest.funsuite.AnyFunSuite
 import it.unibo.bluff.model.*
+import it.unibo.bluff.model.cards.{Card, Shuffler}
 
 final class ShufflerSpec extends AnyFunSuite {
 

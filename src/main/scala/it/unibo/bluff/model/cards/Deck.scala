@@ -1,4 +1,6 @@
-package it.unibo.bluff.model
+package it.unibo.bluff.model.cards
+
+import it.unibo.bluff.model.cards.{Deck, ListDeck, Shuffler}
 
 trait Deck:
   def draw(n: Int): (List[Card], Deck)
