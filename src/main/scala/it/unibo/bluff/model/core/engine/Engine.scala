@@ -166,9 +166,17 @@ object Engine:
     state.hands.collectFirst { case (pid, hand) if hand.size == 0 => pid }
 
   private def withWinEvent(st: GameState, evs: List[GameEvent]): (GameState, List[GameEvent]) =
-    winnerIfAny(st) match
-      case Some(w) => st -> (evs :+ GameEnded(w))
-      case None    => st -> evs
+    val winner = winnerIfAny(st)
+    println(s"[DEBUG Engine.withWinEvent] winner=$winner, evs prima=$evs")
+    winner match
+      case Some(w) =>
+        val out = st -> (evs :+ GameEnded(w))
+        println(s"[DEBUG Engine.withWinEvent] -> aggiunto GameEnded($w)")
+        out
+      case None =>
+        println(s"[DEBUG Engine.withWinEvent] -> nessun vincitore")
+        st -> evs
+
 
 
 object GameEngine:

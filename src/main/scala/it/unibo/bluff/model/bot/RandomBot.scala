@@ -10,38 +10,47 @@ import scala.util.Random
 
 class RandomBot(val id: PlayerId):
   private val rng = new Random()
-  
+
   def decideMove(state: GameState): GameCommand =
-    if rng.nextDouble() < 0.4 && canCallBluff(state) then
-      callBluff(state)
+    if shouldCallBluff(state) then
+      CallBluff(id)
     else
-      play(state)
+      choosePlay(state)
 
-  /** Gioca da 1 a 3 carte casuali dalla mano */
-  private def play(state: GameState): Play =
+  /** Strategia per la giocata */
+  private def choosePlay(state: GameState): Play =
     val hand = state.hands(id).cards
-    if hand.isEmpty then
-      Play(id, Nil, Rank.Asso) // fallback
-    else
-      val maxCards = math.min(3, hand.size)
-      val numCards = 1 + rng.nextInt(maxCards) // da 1 a maxCards
-      val chosenCards = rng.shuffle(hand).take(numCards)
-
-      val availableRanks: Seq[Rank] =
-        state.fixedDeclaredRank.toSeq ++
-          state.hands.values.flatMap(_.cards.map(_.rank)).toSet.toSeq
-
-      val declared = state.fixedDeclaredRank.getOrElse(
-        availableRanks(rng.nextInt(availableRanks.size))
+    val possibleRank = state.fixedDeclaredRank.getOrElse(
+        rng.shuffle(Rank.values.toList).head
       )
 
+    val matchingCards = hand.filter(_.rank == possibleRank)
 
-      Play(id, chosenCards, declared)
+    val chosenCards =
+      if matchingCards.nonEmpty && rng.nextDouble() > 0.2 then
+          // 80% → gioca coerente con il rank
+        rng.shuffle(matchingCards).take(1 + rng.nextInt(matchingCards.size))
+      else
+          // 20% → bluffa anche se ha carte giuste
+        rng.shuffle(hand).take(1)
 
-  /** Chiamata bluff */
-  private def callBluff(state: GameState): CallBluff =
-    CallBluff(id)
+    Play(id, chosenCards, possibleRank)
 
-  /** Controlla se il bot può chiamare bluff (es. c'è qualcosa sul tavolo) */
-  private def canCallBluff(state: GameState): Boolean =
-    state.pile.allCards.size>0
+  /** Strategia per chiamare bluff */
+  private def shouldCallBluff(state: GameState): Boolean =
+    state.lastDeclaration match
+      case Some(decl) =>
+        val rankPlayed = decl.declared
+        val cardsShown = decl.hiddenCards.size
+
+        val alreadyOnTable = state.pile.allCards.count(_.rank == rankPlayed)
+        val totalPossible = 4
+        val suspicious = alreadyOnTable + cardsShown > totalPossible
+
+        val myHandSize = state.hands(id).cards.size
+
+        // 70% delle volte chiama se sospetto, 10% random anche senza sospetto
+        (suspicious && rng.nextDouble() < 0.7) ||
+          (rng.nextDouble() < 0.1 && myHandSize > 3)
+      case None =>
+        false

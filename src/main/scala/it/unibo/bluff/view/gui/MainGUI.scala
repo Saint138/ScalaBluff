@@ -79,7 +79,8 @@ object MainGUI extends JFXApp3:
         stateRef   = stateRef,
         bot        = bot,
         pollMillis = 250L,
-        onNewState = onNewState
+        onNewState = onNewState,
+        onGameEnded = () => checkRoundEnd()
       )
       botRunner = Some(runner)
       runner.start()
@@ -140,9 +141,12 @@ object MainGUI extends JFXApp3:
     if roundHandled then return
     game.currentState.foreach { st =>
       val winnerOpt = st.hands.collectFirst { case (pid, hand) if hand.size == 0 => pid }
+      println("00000000000000000000000000000000")
+      println( winnerOpt)
       winnerOpt.foreach { _ =>
         roundHandled = true
         // ferma timer di partita e bot non appena il round è concluso
+        println("ciooooooo")
         stopTimer()
         stopBot()
         val roundStats = game.currentMatchStats.getOrElse(MatchStats.empty(st.players))

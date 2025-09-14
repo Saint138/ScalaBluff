@@ -1,13 +1,14 @@
-import org.scalatest.funsuite.AnyFunSuite
+package botTest
+
 import it.unibo.bluff.model.*
-import it.unibo.bluff.model.core.engine.Engine.*
-import it.unibo.bluff.model.core.state.*
-import it.unibo.bluff.model.TurnOrder
 import it.unibo.bluff.model.TurnOrder.given
 import it.unibo.bluff.model.core.engine.Engine
-import it.unibo.bluff.model.core.engine.Engine.GameEvent._
+import it.unibo.bluff.model.core.engine.Engine.*
+import it.unibo.bluff.model.core.engine.Engine.GameEvent.*
+import it.unibo.bluff.model.core.state.*
+import org.scalatest.funsuite.AnyFunSuite
 
-class BluffTurnTest extends AnyFunSuite {
+class BotBluffTurnTest extends AnyFunSuite {
 
   test("Bluff vero: turno passa al dichiarante") {
     val p0 = PlayerId(0) // giocatore
