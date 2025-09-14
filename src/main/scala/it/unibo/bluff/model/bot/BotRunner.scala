@@ -28,8 +28,6 @@ final class BotRunner(
         case Right((newSt, evs)) =>
           // 1) aggiorna lo stato condiviso
           stateRef.set(newSt)
-          // 2) notifica GUI / controller
-          BotManager.onEvents(evs)
           onNewState(newSt)
 
           // 3) controlla se c'è GameEnded tra gli eventi
