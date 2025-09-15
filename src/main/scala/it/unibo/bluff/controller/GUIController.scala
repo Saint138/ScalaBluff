@@ -40,7 +40,6 @@ object GUIController:
     game.currentState.foreach(stateRef.set)
   }
 
-  // onEvents verrà impostato dalla GUI tramite subscribeToExternalEvents
 
   // ---------------- Timer & Bot ----------------
   private def stopTimer(): Unit =

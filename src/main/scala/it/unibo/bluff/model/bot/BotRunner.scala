@@ -7,6 +7,8 @@ import it.unibo.bluff.model.PlayerId
 import it.unibo.bluff.model.core.engine.Engine
 import it.unibo.bluff.model.core.engine.Engine.GameEvent
 
+/*Manages automatic bot turns by periodically checking the game state and executing moves when it's the bot's turn.*/
+
 final class BotRunner(
                        stateRef: AtomicReference[GameState],
                        bot: Bot,
@@ -19,7 +21,6 @@ final class BotRunner(
   @volatile private var running: Boolean = false
   private var lastTurn: Option[PlayerId] = None
 
-  /** Task eseguito periodicamente */
   private def task(): Unit = {
     val st = stateRef.get()
     if st.turn == bot.id then
@@ -40,13 +41,11 @@ final class BotRunner(
     }
   }
 
-  /** Avvia il polling del bot */
   def start(): Unit =
     if !running then
       running = true
       scheduler.scheduleAtFixedRate(() => task(), 0, pollMillis, TimeUnit.MILLISECONDS)
 
-  /** Ferma il bot e lo scheduler */
   def stop(): Unit =
     if running then
       running = false

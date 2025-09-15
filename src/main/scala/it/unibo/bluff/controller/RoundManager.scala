@@ -22,10 +22,8 @@ class RoundManager(
   private var roundHandled: Boolean = false
   private var cumulativeStats: MatchStats = MatchStats(Map.empty)
 
-  /** Callback invocata quando un round è concluso. */
   var onRoundEnd: (GameState, MatchStats, Boolean) => Unit = (_, _, _) => ()
 
-  /** Callback invocata quando l’intero torneo è concluso. */
   var onTournamentEnd: (GameState, MatchStats) => Unit = (_, _) => ()
 
   /** Configura un nuovo torneo. */

@@ -8,6 +8,8 @@ import it.unibo.bluff.model.cards.Rank
 
 import scala.util.Random
 
+/*A SmartBot that decides moves using a mix of bluffing and strategic play based on hand, table state, and probabilities.*/
+
 class SmartBot(val id: PlayerId) extends Bot:
   private val rng = new Random()
 
@@ -23,7 +25,6 @@ class SmartBot(val id: PlayerId) extends Bot:
     val possibleRanksInGame = state.hands.values.flatMap(_.cards.map(_.rank)).toSet ++
       state.pile.allCards.map(_.rank)
 
-    // Scegli un rango da dichiarare (tra quelli posseduti o casuale)
     val rankToPlay =
       if state.fixedDeclaredRank.exists(possibleRanksInGame.contains) then state.fixedDeclaredRank.get
       else rng.shuffle(possibleRanksInGame.toList).head
@@ -35,13 +36,10 @@ class SmartBot(val id: PlayerId) extends Bot:
 
     val chosenCards =
       if fewCardsLeft then
-        // Dichiarazione corretta: gioca tutte le carte di quel rango rimaste
         rng.shuffle(cardsOfRank).take(maxCardsToDeclare)
       else if bluffEarly then
-        // Bluffa con carte a caso, ma mai più di 3
         rng.shuffle(hand).take(1 + rng.nextInt(math.min(3, hand.size)))
       else
-        // Giocata coerente ma possibile bluff leggero
         if cardsOfRank.nonEmpty && rng.nextDouble() < 0.8 then
           rng.shuffle(cardsOfRank).take(1 + rng.nextInt(maxCardsToDeclare))
         else
@@ -62,7 +60,7 @@ class SmartBot(val id: PlayerId) extends Bot:
 
         val baseProb =
           if suspicious then 0.9 // se sospetto, chiama bluff 90% delle volte
-          else if myHandSize <= 3 then 0.7 // poche carte in mano → rischia di più
+          else if myHandSize <= 3 then 0.7 // poche carte in mano rischia di più
           else 0.3 // altrimenti chiama bluff con probabilità bassa
 
         rng.nextDouble() < baseProb

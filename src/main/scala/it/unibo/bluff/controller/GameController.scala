@@ -7,7 +7,7 @@ import it.unibo.bluff.model.core.state.GameState
 import it.unibo.bluff.model.TurnOrder.given
 import it.unibo.bluff.model.stats.{MatchStats, StatsUpdater}
 
-/** Controller MVC: mantiene lo stato della partita e aggiorna le statistiche. */
+/** Controller: mantiene lo stato della partita e aggiorna le statistiche. */
 final class GameController:
 
   private var state: Option[GameState] = None
@@ -16,16 +16,14 @@ final class GameController:
   def currentState: Option[GameState] = state
   def currentMatchStats: Option[MatchStats] = stats
 
-  /** Inizializza lo stato a inizio round e resetta le stats. */
   def setInitialState(st: GameState): Unit =
     state = Some(st)
     stats = Some(MatchStats.empty(st.players))
 
-  /** Aggiorna lo stato corrente senza toccare le stats (sync esterni, es. bot runner). */
   def setCurrentState(st: GameState): Unit =
     state = Some(st)
 
-  /** Applica un comando al motore aggiornando stato e statistiche. */
+
   def handleCommand(cmd: GameCommand): Either[String, List[GameEvent]] =
     state match
       case None => Left("Nessuna partita in corso")
@@ -37,25 +35,27 @@ final class GameController:
           evs
         }
 
+
   private def updateStats(prev: GameState, evs: List[GameEvent], st2: GameState): Unit =
     stats = stats.map(ms => StatsUpdater(prev, evs, st2, ms))
 
-  /** No-op se non usi bot; tienilo per compatibilità chiamanti. */
   def botTurn(): Either[String, List[GameEvent]] = Right(Nil)
 
-  def renderEvent(ev: Engine.GameEvent, st: GameState): List[String] = ev match
-    case Engine.GameEvent.Dealt(sz) =>
-      sz.map { case (p, s) => s"Distribuite carte: ${st.nameOf(p)}=$s" }.toList
-    case Engine.GameEvent.Played(p, d, c) =>
-      List(s"${st.nameOf(p)} dichiara $d e gioca $c carte")
-    case Engine.GameEvent.BotPlayed(p, d, c) =>
-      List(s"(BOT) ${st.nameOf(p)} dichiara $d e gioca $c carte")
-    case Engine.GameEvent.BluffCalled(by, ag, truth) =>
-      List(s"${st.nameOf(by)} accusa ${st.nameOf(ag.player)} → " + (if truth then "VERA" else "FALSA"))
-    case Engine.GameEvent.TimerExpired(p) =>
-      List(s"Timeout: ${st.nameOf(p)} ha esaurito il tempo.")
-    case Engine.GameEvent.QuartetCleared(p, r, cnt) =>
-      List(s"♻️ ${st.nameOf(p)} elimina automaticamente $cnt carte ($r)")
-    case Engine.GameEvent.GameEnded(w) =>
-      List(s"🏆 Vince ${st.nameOf(w)}!")
+
+  def renderEvent(ev: GameEvent, st: GameState): List[String] = ev match
+    case Engine.GameEvent.Dealt(sizes) =>
+      sizes.map { case (p, sz) => s"${st.nameOf(p)} riceve $sz carte" }.toList
+    case Engine.GameEvent.Played(player, declared, count) =>
+      List(s"${st.nameOf(player)} dichiara $declared e gioca $count carte")
+    case Engine.GameEvent.BotPlayed(player, declared, count) =>
+      List(s"(BOT) ${st.nameOf(player)} dichiara $declared e gioca $count carte")
+    case Engine.GameEvent.BluffCalled(by, against, truthful) =>
+      val result = if truthful then "VERA" else "FALSA"
+      List(s"${st.nameOf(by)} accusa ${st.nameOf(against.player)} → $result")
+    case Engine.GameEvent.TimerExpired(player) =>
+      List(s"Timeout: ${st.nameOf(player)} ha esaurito il tempo.")
+    case Engine.GameEvent.QuartetCleared(player, rank, count) =>
+      List(s"${st.nameOf(player)} elimina automaticamente $count carte ($rank)")
+    case Engine.GameEvent.GameEnded(winner) =>
+      List(s"🏆 Vince ${st.nameOf(winner)}!")
     case _ => Nil

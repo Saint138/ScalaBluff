@@ -21,12 +21,10 @@ class StrategicBot(val id: PlayerId) extends Bot:
   private def choosePlay(state: GameState): Play =
     val hand = state.hands(id).cards
     val possibleRank = state.fixedDeclaredRank.getOrElse {
-      // Se non c’è, scegliamo casualmente tra i ranghi effettivamente presenti nelle carte della partita
       val ranksInGame: Set[Rank] = state.hands.values.flatMap(_.cards.map(_.rank)).toSet ++
         state.pile.allCards.map(_.rank)
       rng.shuffle(ranksInGame.toList).head
     }
-
     val matchingCards = hand.filter(_.rank == possibleRank)
 
     val chosenCards =
