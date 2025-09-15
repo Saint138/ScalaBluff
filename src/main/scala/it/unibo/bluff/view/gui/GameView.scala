@@ -1,7 +1,5 @@
 package it.unibo.bluff.view.gui
 
-import it.unibo.bluff.controller.GameController
-
 import java.util.concurrent.atomic.AtomicReference
 import it.unibo.bluff.model.core.engine.Engine
 import it.unibo.bluff.model.core.engine.Engine.{GameCommand, GameEvent}
@@ -9,7 +7,6 @@ import it.unibo.bluff.model.*
 import it.unibo.bluff.model.core.state.GameState
 import it.unibo.bluff.model.TurnOrder.given
 import it.unibo.bluff.view.gui.components.*
-import it.unibo.bluff.model.bot.BotManager
 import it.unibo.bluff.model.cards.Card
 import scalafx.Includes.*
 import scalafx.animation.{KeyFrame, Timeline}
@@ -24,12 +21,17 @@ import scala.collection.mutable
 
 object GameView {
 
-  /** La View non chiama più Engine.step: riceve una funzione di dispatch dal Controller. */
+  /** La View non chiama Engine.step: riceve un dispatch dal Controller.
+    * La View non conosce più GameController né BotManager:
+    * - renderEvent è una funzione passata dal Controller
+    * - subscribeToExternalEvents permette al Controller di inoltrare eventi esterni (es. bot)
+    */
   def apply(
-    controller: GameController,
     stateRef: AtomicReference[GameState],
     maxPerTurnMs: Long = 60_000L,
     dispatch: GameCommand => Either[String, List[GameEvent]],
+    renderEvent: (GameEvent, GameState) => List[String],
+    subscribeToExternalEvents: (List[GameEvent] => Unit) => Unit = _ => (),
     onGameEnded: PlayerId => Unit = _ => (),
     onExitToMenu: () => Unit = () => (),
     onOverlayChange: Boolean => Unit = _ => () // true=overlay ON, false=OFF
@@ -56,7 +58,6 @@ object GameView {
       private val logArea   = LogPanel()
       private val actions   = ActionsPanel()
 
-      // (opzionale) leggero boost visivo ai bottoni azione
       actions.style = "-fx-font-size: 14px;"
 
       // ===== Overlay privacy tra turni (solo 2 umani) =====
@@ -160,7 +161,7 @@ object GameView {
           selected.remove(c)
           n.markSelected(false)
         else
-          selected.add(c)      // ← rimosso il limite a 3, ora puoi selezionare 4 (o più) carte
+          selected.add(c)      // consenti selezione multipla
           n.markSelected(true)
         updateButtonsEnabled()
 
@@ -194,27 +195,25 @@ object GameView {
 
       // ===== Logger eventi in GameView (anche per bot) =====
       private def appendEvent(ev: Engine.GameEvent): Unit =
-        val messages = controller.renderEvent(ev, st)  // `game` è il controller
+        val messages = renderEvent(ev, st)
         messages.foreach(msg => logArea.appendText(msg + "\n"))
         if ev.isInstanceOf[Engine.GameEvent.GameEnded] then
-            uiTick.stop()
-
+          uiTick.stop()
+          // opzionale: callback per fine partita (se vuoi)
+          ev match
+            case Engine.GameEvent.GameEnded(w) => onGameEnded(w)
+            case _ => ()
 
       // ===== Actions (via Controller.dispatch) =====
       private def send(cmd: GameCommand): Unit =
-      // Invia il comando al controller
         val result = dispatch(cmd)
-
         result match
           case Left(err) =>
-          // Mostra solo eventuali errori
-           new Alert(Alert.AlertType.Error) {
+            new Alert(Alert.AlertType.Error) {
               headerText = "Mossa non valida"
               contentText = err
-           }.showAndWait()
-
+            }.showAndWait()
           case Right(events) =>
-            // Gli eventi vengono gestiti dal metodo appendEvent
             events.foreach(appendEvent)
             updateAll()
 
@@ -231,8 +230,9 @@ object GameView {
       private val uiTick = Timeline(KeyFrame(Duration(200), onFinished = _ => updateHeader()))
       uiTick.cycleCount = Timeline.Indefinite
       uiTick.play()
-      
-      BotManager.onEvents = { evs =>
+
+      // La View si limita a registrare un callback: sarà il Controller ad inoltrare gli eventi esterni
+      subscribeToExternalEvents { evs =>
         Platform.runLater {
           evs.foreach(appendEvent)
           updateHeader()
