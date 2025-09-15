@@ -18,21 +18,23 @@ class RandomBot(val id: PlayerId)extends Bot:
     else
       play(state)
 
-  /** Gioca da 1 a 3 carte casuali dalla mano */
+  /** Gioca da 1 a 3 carte casuali coerenti con il rank dichiarato o scelto casualmente tra le carte in mano */
   private def play(state: GameState): Play =
     val hand = state.hands(id).cards
     if hand.isEmpty then
       Play(id, Nil, Rank.Asso) // fallback
     else
-      val maxCards = math.min(3, hand.size)
-      val numCards = 1 + rng.nextInt(maxCards) // da 1 a maxCards
-      val chosenCards = rng.shuffle(hand).take(numCards)
+      val declared = state.fixedDeclaredRank match
+        case Some(rk) if hand.exists(_.rank == rk) => rk
+        case _ => rng.shuffle(hand.map(_.rank)).headOption.getOrElse(Rank.Asso)
 
-      val declared = state.fixedDeclaredRank.getOrElse(
-        Rank.values(rng.nextInt(Rank.values.size))
-      )
+      val matchingCards = hand.filter(_.rank == declared)
+      val maxCards = math.min(3, matchingCards.size)
+      val numCards = if maxCards > 0 then 1 + rng.nextInt(maxCards) else 1
+      val chosenCards = rng.shuffle(matchingCards).take(numCards)
 
       Play(id, chosenCards, declared)
+
 
   /** Chiamata bluff */
   private def callBluff(state: GameState): CallBluff =
@@ -40,4 +42,4 @@ class RandomBot(val id: PlayerId)extends Bot:
 
   /** Controlla se il bot può chiamare bluff (es. c'è qualcosa sul tavolo) */
   private def canCallBluff(state: GameState): Boolean =
-    state.pile.allCards.size>0
+    state.pile.allCards.nonEmpty
