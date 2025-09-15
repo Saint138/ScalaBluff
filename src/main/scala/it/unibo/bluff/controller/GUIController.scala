@@ -139,13 +139,12 @@ object GUIController:
     }
   }
 
-  // ---------------- API pubblica ----------------
-  def startMultiplayer(names: Vector[String], rounds: Int, stage: Stage): Unit =
+  private def startMultiplayer(names: Vector[String], rounds: Int, stage: Stage): Unit =
     vsBot = false
     roundMgr.initTournament(names, rounds)
     startRound(stage)
 
-  def startVsBot(names: Vector[String], rounds: Int, stage: Stage, kind: String): Unit =
+  private def startVsBot(names: Vector[String], rounds: Int, stage: Stage, kind: String): Unit =
     vsBot = true
     botKind = kind
     val normalized =

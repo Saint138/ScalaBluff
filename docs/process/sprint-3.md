@@ -10,7 +10,7 @@ Obiettivo: dichiarazione vincitore + DSL per test scenari.
 
 - Margherita
 	- Integrazione DSL con CLI (runner che esegue scenari come test)
-    - Refactoring della CLi
+    - Refactoring della CLI
     - Inizio sviluppo della parte grafica
 
 - Sajmir

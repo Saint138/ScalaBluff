@@ -46,14 +46,19 @@ Per la creazione dei bot viene utilizzato il pattern **Factory Method** attraver
 ```scala
 object BotFactory:
   def apply(kind: String, id: PlayerId): Bot = kind match
-    case "smart"  => SmartBot(id)
-    case "random" => RandomBot(id)
-    case _        => RandomBot(id)
+     case "facile"  => RandomBot(id)
+     case "medio" => StrategicBot(id)
+     case "difficile" => SmartBot(id)
+     case other    => RandomBot(id)
 ```
 
-Il pattern **Strategy** è implementato per le diverse strategie di gioco dei bot:
-- `RandomBot`: Implementa una strategia casuale con probabilità configurabili
-- `SmartBot`: Analizza lo stato di gioco, conta le carte e prende decisioni strategiche basate su probabilità
+`RandomBot` gioca e chiama bluff in modo casuale, utile come livello facile.  
+`StrategicBot` alterna giocate coerenti e bluff leggeri con logiche probabilistiche.  
+`SmartBot` adotta strategie più avanzate: bilancia bluff e verità in base alla fase della partita e valuta con più attenzione quando chiamare bluff.
+
+I bot sono integrati nel motore di gioco tramite due componenti di supporto.  
+`BotManager` gestisce l’esecuzione delle mosse dei bot, adattando gli eventi generati e notificando lo stato aggiornato.  
+`BotRunner` si occupa di schedulare i turni dei bot, controllando periodicamente se è il loro turno e invocando il `BotManager` in modo asincrono.
 
 ## Controller
 Il Controller implementa il pattern **Facade** per orchestrare la complessità del sistema, mantenendo una separazione pulita tra coordinamento e logica di business.
