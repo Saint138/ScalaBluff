@@ -168,14 +168,11 @@ object Engine:
 
   private def withWinEvent(st: GameState, evs: List[GameEvent]): (GameState, List[GameEvent]) =
     val winner = winnerIfAny(st)
-    println(s"[DEBUG Engine.withWinEvent] winner=$winner, evs prima=$evs")
     winner match
       case Some(w) =>
         val out = st -> (evs :+ GameEnded(w))
-        println(s"[DEBUG Engine.withWinEvent] -> aggiunto GameEnded($w)")
         out
       case None =>
-        println(s"[DEBUG Engine.withWinEvent] -> nessun vincitore")
         st -> evs
 
 

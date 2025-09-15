@@ -26,17 +26,20 @@ final class GameController:
     state match
       case None => Left("Nessuna partita in corso")
       case Some(st) =>
-        println(s"[DEBUG Controller] Prima: turno=${st.turn}, comando=$cmd")
         val res = Engine.step(st, cmd)
-        res.foreach { case (newSt, evs) =>
-          println(s"[DEBUG Controller] Dopo: turno=${newSt.turn}, eventi=$evs")
-        }
         val prev = st
         Engine.step(st, cmd).map { case (st2, evs) =>
           state = Some(st2)
-          stats = stats.map(ms => StatsUpdater(prev, evs, st2, ms))
+          updateStats(prev, evs, st2)
           evs
         }
+
+  def updateStats(prev: GameState, evs: List[GameEvent], st2: GameState): Unit =
+    println(prev.turn)
+    println(prev)
+    println(evs)
+    println(st2)
+    stats = stats.map(ms => StatsUpdater(prev, evs, st2, ms))
 
   /** No-op se non usi bot; tienilo per compatibilità chiamanti. */
   def botTurn(): Either[String, List[GameEvent]] = Right(Nil)

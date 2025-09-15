@@ -9,7 +9,7 @@ import it.unibo.bluff.model.core.engine.Engine
 /** Controlla periodicamente lo stato e, se è il turno del bot, gioca una mossa. */
 final class BotRunner(
                        stateRef: AtomicReference[GameState],
-                       bot: RandomBot,
+                       bot: Bot,
                        pollMillis: Long = 300L,
                        onNewState: GameState => Unit = _ => (),
                        onGameEnded: () => Unit = () => (),
