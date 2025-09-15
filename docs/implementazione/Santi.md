@@ -12,12 +12,12 @@ Il mio contributo al progetto ScalaBluff si è concentrato sulla realizzazione d
 
 | Area | Componenti Sviluppati | Pattern Utilizzati |
 |------|----------------------|-------------------|
-| **Core Engine** | `Engine`, `GameCommand`, `GameEvent`, `GameEngine` | Command, Event Sourcing |
-| **Validazione** | Sistema di controlli turni e proprietà carte | Validation Monad |
-| **Statistiche** | `PlayerStats`, `MatchStats`, `StatsUpdater` | Functional Pipeline |
-| **Tornei** | `RoundManager`, aggregazione multi-round | Template Method |
-| **Testing** | Suite completa per Engine | Property-based Testing |
-| **GUI** | Card rendering, Privacy overlay, Exit handling | Observer, State |
+|  **Core Engine**  |  `Engine`, `GameCommand`, `GameEvent`, `GameEngine`  | Command, Event Sourcing |
+|  **Validazione**  |  Sistema di controlli turni e proprietà carte  | Validation Monad |
+|  **Statistiche**  |  `PlayerStats`, `MatchStats`, `StatsUpdater`  | Functional Pipeline |
+|  **Tornei**  |  `RoundManager`, aggregazione multi-round |  Template Method |
+|  **Testing**  |  Suite completa per Engine | Property-based Testing  |
+|  **GUI**  |  Card rendering, Privacy overlay, Exit handling  |  Observer, State  |
 
 ---
 
