@@ -18,6 +18,8 @@ Il mio contributo al progetto si è concentrato principalmente sulle seguenti ar
 - [Shuffler](#dealing-shuffler-e-integrazione-nel-motore): interfaccia/implementazione per mescolare il mazzo (supporto a seed per testabilità) usata nella preparazione del `fairInitialDeal`.
 - [Integrazione con la GUI](#integrazione-con-la-gui): disabilitazione dei controlli utente durante il turno bot, log diagnostici e stampa dello stato per debug.
 - [Testing e debugging runtime](#testing): strumenti di logging, println e test manuali per verificare scenari del dealing della carte create.
+- [Timer di turno](#game-timer---snippet-del-timer-di-turno): implementazione del timer di turno che decrementa il clock del giocatore corrente e invia notifiche di timeout al motore.
+- [GameState and GameSetup](#game-state-and-game-setup): progettazione e implementazione della gestione dello stato di gioco e della sua inizializzazione.
 
 
 ## Contributi personali aggiuntivi
@@ -27,7 +29,8 @@ In aggiunta a quanto descritto sopra, ho lavorato direttamente su diverse parti 
 
 Dettagli delle attività svolte:
 
-- Creazione e inizializzazione dei `Player`: progettazione dei campi principali (id, nome, flag `isBot`) e del flusso di aggiunta/rimozione giocatori nella fase di setup della partita.
+- Creazione e inizializzazione dei `Player`: progettazione dei campi principali (id, nome) e del flusso di aggiunta/rimozione giocatori nella fase di setup della partita.
+- Gestione della mano del giocatore `Hand`all'interno della classe Player con metodi per aggiungere, rimuovere e contare le carte.
 - Implementazione del meccanismo di `shuffler` e `dealing`: funzioni per mescolare il mazzo in modo casuale e distribuire le carte ai giocatori rispettando l'ordine e le regole del gioco.
 - Integrazione nel `Engine`: invocazione del comportamento di dealing all'inizio della partita (e in eventuali nuovi round), garantendo che lo stato risultante sia coerente e che gli eventi `Dealt` vengano emessi correttamente.
 - GUI - `GameView`: creazione della vista di gioco iniziale che mostra mano del giocatore, conteggio delle carte avversarie, pila e mazzo residuo; implementazione dell'interazione base per selezionare carte e inviare comandi di gioco.
@@ -158,6 +161,38 @@ Questa routine coordina l'avvio di un round nella GUI:
 - Sincronizza lo stato con il `GameController` (`game.setGameState`) e con il riferimento condiviso `stateRef` usato dalla `GameView`.
 - Avvia il `GameTimer` (`startTimer`) per far partire il tick dell'interfaccia (header/tempo) e la logica di timeout.
 
+## game-state-and-game-setup
+
+### GameState
+
+`GameState` rappresenta lo stato completo della partita in ogni istante: tiene traccia dei giocatori, delle mani, del mazzo residuo, della pila centrale, del turno, delle dichiarazioni e dei timer. Permette di calcolare il prossimo giocatore e di applicare la distribuzione iniziale delle carte.
+
+Snippet (costruttore iniziale):
+
+```scala
+object GameState:
+	def initial(players: Int, playerNames: Vector[String], shuffled: List[Card]): GameState =
+		val ids = Vector.tabulate(players)(PlayerId.apply)
+		val nameMap = ids.zip(playerNames).toMap
+		GameState(
+			players = ids,
+			hands = Map.empty,
+			deck = shuffled,
+			pile = CenterPile.empty,
+			turn = ids.head,
+			lastDeclaration = None,
+			pendingPenalty = None,
+			finished = false,
+			playersNames = nameMap,
+			fixedDeclaredRank = None,
+			clocks = ids.map(_ -> 0L).toMap
+		)
+```
+
+### GameSetup
+
+`GameSetup` si occupa di preparare lo stato iniziale della partita in modo equo, evitando che un giocatore abbia già un quartetto in mano. Usa uno shuffler casuale e ripete la distribuzione fino a trovare una configurazione valida.
+Uno snippet della funzione `fairInitialDeal` inerente al setup del gioco è stato mostrato nella sezione di dealing.
 
 ## GameView - rendering e interazione iniziale
 

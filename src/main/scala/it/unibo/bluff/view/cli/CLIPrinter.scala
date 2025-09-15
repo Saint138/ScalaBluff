@@ -51,6 +51,8 @@ object CLIPrinter:
         println(s"Event: timeout di ${st.nameOf(player)}")
       case GameEvent.BotPlayed(player, declared, count) =>
         println(s"Event: (BOT) ${st.nameOf(player)} dichiara $declared e gioca $count carte")
+      case GameEvent.QuartetCleared(player, rank, count) =>
+        println(s"Event: ♻️ ${st.nameOf(player)} elimina automaticamente $count carte ($rank)")
     }
 
   def printHelp(gameActive: Boolean): Unit =

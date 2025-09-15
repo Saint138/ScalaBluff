@@ -58,4 +58,4 @@ final class GameController:
       List(s"♻️ ${st.nameOf(p)} elimina automaticamente $cnt carte ($r)")
     case Engine.GameEvent.GameEnded(w) =>
       List(s"🏆 Vince ${st.nameOf(w)}!")
-    case _ => Nil
+    case null => Nil
