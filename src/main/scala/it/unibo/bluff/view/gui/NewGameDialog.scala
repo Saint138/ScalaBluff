@@ -29,8 +29,8 @@ object NewGameDialog {
     rbMulti.toggleGroup  = tg
 
     // --- Scelta bot
-    val botChoice = new ComboBox[String](Seq("random", "smart")) {
-      value = "random"
+    val botChoice = new ComboBox[String](Seq("facile","medio", "difficile")) {
+      value = "facile"
     }
 
     // --- Nomi giocatori

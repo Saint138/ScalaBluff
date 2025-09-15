@@ -5,8 +5,8 @@ import java.util.concurrent.atomic.AtomicReference
 import it.unibo.bluff.model.core.state.GameState
 import it.unibo.bluff.model.PlayerId
 import it.unibo.bluff.model.core.engine.Engine
+import it.unibo.bluff.model.core.engine.Engine.GameEvent
 
-/** Controlla periodicamente lo stato e, se è il turno del bot, gioca una mossa. */
 final class BotRunner(
                        stateRef: AtomicReference[GameState],
                        bot: Bot,
@@ -24,24 +24,18 @@ final class BotRunner(
     val st = stateRef.get()
     if st.turn == bot.id then
       BotManager.takeTurn(bot, st) match {
-        case Left(_) => () // nessuna mossa valida, ignora
+        case Left(_) => () 
         case Right((newSt, evs)) =>
-          // 1) aggiorna lo stato condiviso
           stateRef.set(newSt)
           onNewState(newSt)
-
-          // 3) controlla se c'è GameEnded tra gli eventi
           if evs.exists {
-            case it.unibo.bluff.model.core.engine.Engine.GameEvent.GameEnded(_) => true
+            case GameEvent.GameEnded(_) => true
             case _ => false
           } then
             onGameEnded()
-
-          // 4) aggiorna ultimo turno
           lastTurn = Some(st.turn)
       }
     else {
-      // se non è turno del bot, aggiorna solo il marcatore
       lastTurn = Some(st.turn)
     }
   }

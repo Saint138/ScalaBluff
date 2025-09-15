@@ -4,8 +4,7 @@ import it.unibo.bluff.model.{Hand, PlayerId, TurnOrder}
 import org.scalatest.funsuite.AnyFunSuite
 import it.unibo.bluff.model.core.state.*
 import it.unibo.bluff.model.core.engine.Engine
-import it.unibo.bluff.model.core.engine.Engine.GameCommand
-import it.unibo.bluff.model.core.engine.Engine.GameEvent
+import it.unibo.bluff.model.core.engine.Engine.{GameCommand, GameEvent}
 import it.unibo.bluff.model.TurnOrder.given
 import it.unibo.bluff.model.bot.{Bot, BotFactory, BotManager}
 import it.unibo.bluff.model.cards.{Card, Rank, Suit}
@@ -16,16 +15,20 @@ class BotVictoryTest extends AnyFunSuite {
   def playBot(bot: Bot, st: GameState): (GameState, List[GameEvent]) = {
     var currentState = st
 
-    BotManager.executeCommand = (cmd: GameCommand) =>
-      Engine.step(currentState, cmd) match
-        case Right((newSt, evs)) =>
-          currentState = newSt 
-          Right((newSt, evs))
-        case Left(err) => Left(err)
+    // Creiamo un BotManager locale con executeCommand che aggiorna currentState
+    val botManager = new BotManager(
+      onEvents = _ => (), // ignoriamo eventi GUI nel test
+      onStateUpdate = s => currentState = s, // aggiorniamo currentState
+      executeCommand = (cmd: GameCommand) =>
+        Engine.step(currentState, cmd)
+    )
 
-    BotManager.takeTurn(bot, currentState) match
-      case Right((newSt, evs)) => (newSt, evs)
-      case Left(err)           => fail(s"Bot execution failed: $err")
+    botManager.takeTurn(bot, currentState) match
+      case Right((newSt, evs)) =>
+        currentState = newSt
+        (newSt, evs)
+      case Left(err) =>
+        fail(s"Bot execution failed: $err")
   }
 
   test("RandomBot wins the game") {
@@ -52,7 +55,7 @@ class BotVictoryTest extends AnyFunSuite {
       lastDeclaration = None,
       pendingPenalty = None,
       finished = false,
-      playersNames = Map(p0 -> "Alice", p1 -> "RandomBot"),
+      playersNames = Map(p0 -> "Player", p1 -> "RandomBot"),
       fixedDeclaredRank = Some(Rank.Due),
       clocks = Map(p0 -> 0L, p1 -> 0L)
     )

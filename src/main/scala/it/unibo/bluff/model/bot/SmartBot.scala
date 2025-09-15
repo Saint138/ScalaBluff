@@ -4,7 +4,6 @@ import it.unibo.bluff.model.*
 import it.unibo.bluff.model.core.state.*
 import it.unibo.bluff.model.core.engine.Engine.GameCommand.{CallBluff, Play}
 import it.unibo.bluff.model.core.engine.Engine.GameCommand
-import it.unibo.bluff.model.TurnOrder.given
 import it.unibo.bluff.model.cards.Rank
 
 import scala.util.Random
@@ -21,42 +20,52 @@ class SmartBot(val id: PlayerId) extends Bot:
   /** Strategia per la giocata */
   private def choosePlay(state: GameState): Play =
     val hand = state.hands(id).cards
-    val possibleRank = state.fixedDeclaredRank.getOrElse {
-      // Se non c’è, scegliamo casualmente tra i ranghi effettivamente presenti nelle carte della partita
-      val ranksInGame: Set[Rank] = state.hands.values.flatMap(_.cards.map(_.rank)).toSet ++
-        state.pile.allCards.map(_.rank)
-      rng.shuffle(ranksInGame.toList).head
-    }
+    val possibleRanksInGame = state.hands.values.flatMap(_.cards.map(_.rank)).toSet ++
+      state.pile.allCards.map(_.rank)
 
-      val matchingCards = hand.filter(_.rank == possibleRank)
+    // Scegli un rango da dichiarare (tra quelli posseduti o casuale)
+    val rankToPlay =
+      if state.fixedDeclaredRank.exists(possibleRanksInGame.contains) then state.fixedDeclaredRank.get
+      else rng.shuffle(possibleRanksInGame.toList).head
+
+    val cardsOfRank = hand.filter(_.rank == rankToPlay)
+    val maxCardsToDeclare = math.min(cardsOfRank.size, 3) // mai dichiarare più carte di quante realmente ne possiede
+    val fewCardsLeft = hand.size <= 3
+    val bluffEarly = hand.size >= 5 && rng.nextDouble() < 0.7
 
     val chosenCards =
-      if matchingCards.nonEmpty && rng.nextDouble() > 0.2 then
-        // 80% → gioca coerente con il rank
-        rng.shuffle(matchingCards).take(1 + rng.nextInt(matchingCards.size))
+      if fewCardsLeft then
+        // Dichiarazione corretta: gioca tutte le carte di quel rango rimaste
+        rng.shuffle(cardsOfRank).take(maxCardsToDeclare)
+      else if bluffEarly then
+        // Bluffa con carte a caso, ma mai più di 3
+        rng.shuffle(hand).take(1 + rng.nextInt(math.min(3, hand.size)))
       else
-        // 20% → bluffa anche se ha carte giuste
-        rng.shuffle(hand).take(1)
+        // Giocata coerente ma possibile bluff leggero
+        if cardsOfRank.nonEmpty && rng.nextDouble() < 0.8 then
+          rng.shuffle(cardsOfRank).take(1 + rng.nextInt(maxCardsToDeclare))
+        else
+          rng.shuffle(hand).take(1 + rng.nextInt(math.min(3, hand.size)))
 
-    Play(id, chosenCards, possibleRank)
+    Play(id, chosenCards, rankToPlay)
 
-  /** Strategia per chiamare bluff */
   private def shouldCallBluff(state: GameState): Boolean =
     state.lastDeclaration match
       case Some(decl) =>
-        val rankPlayed = decl.declared
-        val cardsShown = decl.hiddenCards.size
-
-        val alreadyOnTable = state.pile.allCards.count(_.rank == rankPlayed)
+        val declaredRank = decl.declared
+        val declaredCount = decl.hiddenCards.size
+        val alreadyOnTable = state.pile.allCards.count(_.rank == declaredRank)
         val totalPossible = 4
-        val suspicious = alreadyOnTable + cardsShown > totalPossible
+        val suspicious = alreadyOnTable + declaredCount > totalPossible
 
         val myHandSize = state.hands(id).cards.size
 
-        // 70% delle volte chiama se sospetto, 10% random anche senza sospetto
-        (suspicious && rng.nextDouble() < 0.7) ||
-          (rng.nextDouble() < 0.1 && myHandSize > 3)
-      case None =>
-        false
+        val baseProb =
+          if suspicious then 0.9 // se sospetto, chiama bluff 90% delle volte
+          else if myHandSize <= 3 then 0.7 // poche carte in mano → rischia di più
+          else 0.3 // altrimenti chiama bluff con probabilità bassa
 
+        rng.nextDouble() < baseProb
+      case None => false
+  
 

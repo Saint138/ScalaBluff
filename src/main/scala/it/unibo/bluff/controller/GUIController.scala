@@ -16,22 +16,17 @@ import scalafx.Includes.jfxScene2sfx
 
 object GUIController:
 
-  // Stato condiviso
   private val stateRef = new AtomicReference[GameState]()
   private val game     = new GameController()
   private val roundMgr = new RoundManager(game, stateRef)
   private var botKind: String = "random"
 
-  // Stage principale (iniettato quando si lancia una partita)
   private var mainStage: Option[Stage] = None
-
-  // Timer / bot runner
   private var timer: Option[GameTimer]     = None
   private var botRunner: Option[BotRunner] = None
   private var vsBot: Boolean = false
 
-  // --- Wiring BotManager (una sola volta) ---
-  // Il bot esegue comandi tramite il controller (che aggiorna stato + stats)
+  // --- Configurazione BotManager singleton ---
   BotManager.executeCommand = cmd =>
     game.handleCommand(cmd).map { evs =>
       val st2 = game.currentState.getOrElse(
@@ -40,9 +35,12 @@ object GUIController:
       (st2, evs)
     }
 
-  // Sync dello stato proveniente da servizi esterni SENZA resettare le stats
-  BotManager.onStateUpdate = s => { game.setCurrentState(s); game.currentState.foreach(stateRef.set) }
-  // NOTA: BotManager.onEvents verrà impostato dalla View tramite subscribeToExternalEvents
+  BotManager.onStateUpdate = s => {
+    game.setCurrentState(s)
+    game.currentState.foreach(stateRef.set)
+  }
+
+  // onEvents verrà impostato dalla GUI tramite subscribeToExternalEvents
 
   // ---------------- Timer & Bot ----------------
   private def stopTimer(): Unit =
@@ -85,14 +83,10 @@ object GUIController:
     res
 
   // ---------------- Avvio / UI ----------------
-  /** Avvia un round e mostra GameView nello stage fornito. */
   private def startRound(stage: Stage): Unit =
     mainStage = Some(stage)
-
     val stWithClocks = roundMgr.startRound()
-    // inizializza stato + stats SOLO qui
     game.setInitialState(stWithClocks)
-
     startTimer(200L)
     startBotIfNeeded(stWithClocks)
 
@@ -103,7 +97,6 @@ object GUIController:
           maxPerTurnMs = 60_000L,
           dispatch = dispatch,
           renderEvent = game.renderEvent,
-          // La View espone un "gancio": colleghiamo gli eventi esterni (es. bot)
           subscribeToExternalEvents = cb => { BotManager.onEvents = cb },
           onGameEnded = _ => roundMgr.checkRoundEnd(),
           onExitToMenu = () => {
