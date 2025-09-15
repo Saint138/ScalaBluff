@@ -1,4 +1,4 @@
-package gui
+package it.unibo.bluff.view.gui
 
 import scalafx.application.Platform
 import scalafx.scene.control.{Alert, TextArea}

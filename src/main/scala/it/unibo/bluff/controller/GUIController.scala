@@ -1,4 +1,4 @@
-package gui
+package it.unibo.bluff.controller
 
 import java.util.concurrent.atomic.AtomicReference
 import it.unibo.bluff.model.*
@@ -9,6 +9,7 @@ import it.unibo.bluff.model.core.engine.Engine.GameCommand
 import it.unibo.bluff.controller.{GameController, RoundManager}
 import it.unibo.bluff.view.gui.{GameView, MainMenuView, NewGameDialog, RulesDialog}
 import scalafx.application.Platform
+import it.unibo.bluff.view.gui.StatsDialog
 import scalafx.scene.layout.BorderPane
 import scalafx.scene.control.Alert
 import scalafx.stage.Stage
