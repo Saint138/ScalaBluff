@@ -1,6 +1,6 @@
 package it.unibo.bluff.view.gui
 
-import gui.GUIController
+import it.unibo.bluff.controller.GUIController
 import scalafx.application.JFXApp3
 import scalafx.scene.Scene
 import scalafx.stage.StageStyle

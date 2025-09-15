@@ -51,7 +51,12 @@ object StatsUpdater:
   def apply(prev: GameState, events: List[GameEvent], next: GameState, cur: MatchStats): MatchStats =
     events.foldLeft(cur) { (acc, ev) =>
       ev match
+        // Giocata umano
         case GameEvent.Played(p, _, count) =>
+          acc.updated(p, s => s.copy(plays = s.plays + 1, cardsPlayed = s.cardsPlayed + count))
+
+        // Giocata bot (conteggia come Played)
+        case GameEvent.BotPlayed(p, _, count) =>
           acc.updated(p, s => s.copy(plays = s.plays + 1, cardsPlayed = s.cardsPlayed + count))
 
         case GameEvent.BluffCalled(by, against, truthful) =>
@@ -63,7 +68,7 @@ object StatsUpdater:
             successfulCalls = s.successfulCalls + (if truthful then 0 else 1)
           ))
 
-          // 2) Chi prende la pila? (truthful ⇒ accuse sbagliata ⇒ carte all'accusatore; altrimenti al dichiarante)
+          // 2) Chi prende la pila? (truthful ⇒ accusa sbagliata ⇒ carte all'accusatore; altrimenti al dichiarante)
           val receiver = if truthful then by else against.player
           val acc2 = acc1.updated(receiver, s => s.copy(
             pileCardsTaken = s.pileCardsTaken + pileSize

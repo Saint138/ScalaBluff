@@ -43,7 +43,7 @@ object CLI:
     val numPlayers = promptPlayersCount()
     val names = promptPlayersName(numPlayers)
     val (st, evs, deckSize) = fairInitialDeal(numPlayers, names)
-    controller.setGameState(st)
+    controller.setInitialState(st)
     println(s"Nuova partita con $numPlayers giocatori.")
     println(s"Mazzo iniziale: $deckSize carte.")
     println(s"Primo turno: ${st.nameOf(st.turn)}")
@@ -54,7 +54,7 @@ object CLI:
   def startNewGameVSBot(): Unit =
     // per ora: 2 giocatori "Human" e "Bot" (nessuna IA automatica lato CLI)
     val (st, evs, deckSize) = fairInitialDeal(2, Vector("Human", "Bot"))
-    controller.setGameState(st)
+    controller.setCurrentState(st)
     println("Nuova partita contro il Bot!")
     println(s"Mazzo iniziale: $deckSize carte.")
     println(s"Primo turno: ${st.nameOf(st.turn)}")
