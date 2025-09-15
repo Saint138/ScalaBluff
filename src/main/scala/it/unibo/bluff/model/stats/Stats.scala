@@ -4,14 +4,13 @@ import it.unibo.bluff.model.*
 import it.unibo.bluff.model.core.state.GameState
 import it.unibo.bluff.model.core.engine.Engine.GameEvent
 
-/** Statistiche per singolo giocatore. */
 final case class PlayerStats(
   plays: Int = 0,
   cardsPlayed: Int = 0,
   calls: Int = 0,
   successfulCalls: Int = 0,   // accusa corretta (bluff scoperto)
   successfulBluffs: Int = 0,  // accusa sbagliata (bluff riuscito per il dichiarante)
-  pileCardsTaken: Int = 0,    // carte raccolte dalla pila
+  pileCardsTaken: Int = 0,    
   timeouts: Int = 0,
   wins: Int = 0
 ):
@@ -30,7 +29,6 @@ final case class PlayerStats(
 object PlayerStats:
   val empty: PlayerStats = PlayerStats()
 
-/** Statistiche di una singola partita. */
 final case class MatchStats(perPlayer: Map[PlayerId, PlayerStats]):
   def updated(pid: PlayerId, f: PlayerStats => PlayerStats): MatchStats =
     val cur = perPlayer.getOrElse(pid, PlayerStats.empty)
@@ -46,7 +44,6 @@ object MatchStats:
   def empty(players: Iterable[PlayerId]): MatchStats =
     MatchStats(players.map(_ -> PlayerStats.empty).toMap)
 
-/** Funzione pura: aggiorna le stats a partire dagli eventi emessi. */
 object StatsUpdater:
   def apply(prev: GameState, events: List[GameEvent], next: GameState, cur: MatchStats): MatchStats =
     events.foldLeft(cur) { (acc, ev) =>
@@ -92,7 +89,6 @@ object StatsUpdater:
         case _ => acc
     }
 
-  /** Stringhe pronte per popup GUI. */
   def pretty(gs: GameState, ms: MatchStats): String =
     val lines = gs.players.map { pid =>
       val nm = gs.nameOf(pid)

@@ -8,10 +8,6 @@ import scalafx.geometry.{Insets, Pos}
 import scalafx.Includes.*
 
 object RulesDialog:
-  /**
-   * Show the rules in a standalone window. Provide an optional onBack callback
-   * that will be invoked when the user clicks "Back to Main Menu".
-   */
   def show(onBack: () => Unit = () => ()): Unit =
     val rulesText =
       """

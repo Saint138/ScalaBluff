@@ -22,8 +22,7 @@ object CardNode {
     case "quadri" | "diamonds"=> "diamonds"
     case "fiori"  | "clubs"   => "clubs"
     case "picche" | "spades"  => "spades"
-    case other                => other // fallback
-
+    case other                => other 
   private def rankToken(r: Rank): String = r.toString.toLowerCase match
     case "ace"   | "asso"  => "A"
     case "two"   | "due"   => "2"
@@ -38,7 +37,7 @@ object CardNode {
     case "jack"  | "fante"   => "J"
     case "queen" | "donna"   => "Q"
     case "king"  | "re"      => "K"
-    case other               => other.toUpperCase // fallback
+    case other               => other.toUpperCase 
 
   private def suitSymbol(s: Suit): String = s.toString.toLowerCase match
     case "cuori" | "hearts"   => "♥"
@@ -51,7 +50,6 @@ object CardNode {
     case "cuori" | "hearts" | "quadri" | "diamonds" => Color.web("#ef8354")
     case _                                          => Color.web("#2d3142")
 
-  // Path conforme al repo: /cards/<suit>_<RANK>.png  (es: /cards/spades_A.png)
   private def imagePath(card: Card): String = {
     val suit = suitFolder(card.suit)
     val rank = rankToken(card.rank)
@@ -67,7 +65,6 @@ object CardNode {
     padding = Insets(4)
     style = baseStyle
 
-    // Prova a caricare il PNG; se manca, fallback a una label testuale
     private val maybeStream = Option(getClass.getResourceAsStream(imagePath(card)))
     children = maybeStream match
       case Some(stream) =>
