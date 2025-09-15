@@ -58,20 +58,6 @@ private def processCommand(state: GameState, cmd: GameCommand):
       case c: CallBluff  => call(state, c)
       case t: Timeout    => timeout(state, t)
 ```
-
-#### Flusso di Esecuzione
-
-```mermaid
-graph TD
-    A[GameCommand] --> B{Validate State}
-    B -->|Valid| C[Process Command]
-    B -->|Invalid| D[Return Error]
-    C --> E[Generate Events]
-    E --> F[Auto Operations]
-    F --> G[Check Win Condition]
-    G --> H[New State + Events]
-```
-
 ## Sistema di Accuse Bluff
 
 ### Logica di Risoluzione
