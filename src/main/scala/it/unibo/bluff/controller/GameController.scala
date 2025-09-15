@@ -34,12 +34,27 @@ final class GameController:
           evs
         }
 
-  def updateStats(prev: GameState, evs: List[GameEvent], st2: GameState): Unit =
-    println(prev.turn)
-    println(prev)
-    println(evs)
-    println(st2)
+  private def updateStats(prev: GameState, evs: List[GameEvent], st2: GameState): Unit =
     stats = stats.map(ms => StatsUpdater(prev, evs, st2, ms))
 
   /** No-op se non usi bot; tienilo per compatibilità chiamanti. */
   def botTurn(): Either[String, List[GameEvent]] = Right(Nil)
+
+  def renderEvent(ev: Engine.GameEvent, st: GameState): List[String] = ev match
+    case Engine.GameEvent.Dealt(sz) =>
+      sz.map { case (p, s) => s"Distribuite carte: ${st.nameOf(p)}=$s" }.toList
+    case Engine.GameEvent.Played(p, d, c) =>
+      List(s"${st.nameOf(p)} dichiara $d e gioca $c carte")
+    case Engine.GameEvent.BotPlayed(p, d, c) =>
+      List(s"(BOT) ${st.nameOf(p)} dichiara $d e gioca $c carte")
+    case Engine.GameEvent.BluffCalled(by, ag, truth) =>
+      List(s"${st.nameOf(by)} accusa ${st.nameOf(ag.player)} → " + (if truth then "VERA" else "FALSA"))
+    case Engine.GameEvent.TimerExpired(p) =>
+      List(s"Timeout: ${st.nameOf(p)} ha esaurito il tempo.")
+    case Engine.GameEvent.QuartetCleared(p, r, cnt) =>
+      List(s"♻️ ${st.nameOf(p)} elimina automaticamente $cnt carte ($r)")
+    case Engine.GameEvent.GameEnded(w) =>
+      List(s"🏆 Vince ${st.nameOf(w)}!")
+    case _ => Nil
+
+

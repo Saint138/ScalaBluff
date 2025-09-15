@@ -39,7 +39,6 @@ object GUIController:
       )
       (st2, evs)
     }
-
   // quando BotManager segnala uno stato nuovo, aggiorniamo controller + stateRef (utile per GUI)
   BotManager.onStateUpdate = s => { game.setGameState(s); game.currentState.foreach(stateRef.set) }
   // log eventi bot (la GUI si iscrive al BotManager.onEvents in GameView)
@@ -101,6 +100,7 @@ object GUIController:
     Platform.runLater {
       stage.scene().root = new BorderPane {
         center = GameView(
+          controller= game,
           stateRef = stateRef,
           maxPerTurnMs = 60_000L,
           dispatch = dispatch,
