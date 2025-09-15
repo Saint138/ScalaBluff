@@ -3,7 +3,6 @@ package it.unibo.bluff.model.bot
 import it.unibo.bluff.model.*
 import it.unibo.bluff.model.core.engine.Engine.GameCommand.{CallBluff, Play}
 import it.unibo.bluff.model.core.engine.Engine.GameCommand
-import it.unibo.bluff.model.TurnOrder.given
 import it.unibo.bluff.model.cards.Rank
 import it.unibo.bluff.model.core.state.GameState
 
