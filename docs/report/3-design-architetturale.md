@@ -10,6 +10,8 @@ Il design architetturale del sistema è stato sviluppato a partire dai requisiti
 
 ## Pattern architetturale: MVC
 
+![Diagramma package](../images/design_architetturale.png)
+
 Abbiamo adottato il pattern Model-View-Controller (MVC) per separare la logica di gioco(business) dalla presentazione e dall'interazione con l'utente.
 
 - Model: gestione dello stato di gioco, regole, dati persistenti e logica del dominio.
