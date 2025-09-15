@@ -10,7 +10,7 @@ layout: default
 Il Model incapsula l'intera logica di business del gioco Bluff, garantendo immutabilità e purezza funzionale. Di seguito sono riportate le principali scelte di design che hanno guidato l'implementazione di questo componente architetturale. 
 
 ### Gestione dello Stato di Gioco
-![Diagramma package](../images/engine_dettaglio.png)
+![Diagramma package](../images/engine_dettaglio.png){: .center-image width="300"}
 Lo stato del gioco è modellato attraverso la case class immutabile `GameState`, che rappresenta una fotografia completa del gioco in un dato momento. L'immutabilità garantisce thread-safety e facilita il debugging, permettendo di tracciare l'evoluzione del gioco attraverso stati successivi.
 
 L'`Engine` implementa il pattern **Command** per processare le azioni di gioco. Ogni comando (`Play`, `CallBluff`, `Timeout`) viene validato e trasformato in una tupla `(newState, events)`, mantenendo la purezza funzionale:
@@ -26,7 +26,7 @@ Questa architettura event-driven permette di:
 - Implementare facilmente funzionalità come replay o undo
 
 ### Gestione statistiche
-![Diagramma package](../images/Stats_dettaglio.png)
+![Diagramma package](../images/Stats_dettaglio.png){: .center-image width="300"}
 Il sistema di statistiche è progettato come una pipeline di trasformazioni funzionali pure. `StatsUpdater` è un object che implementa una funzione di fold sugli eventi, aggiornando incrementalmente le statistiche:
 
 ```scala
@@ -40,7 +40,7 @@ Le statistiche sono strutturate gerarchicamente:
 - Statistiche cumulative: Gestite da `RoundManager` per tornei multi-round
 
 ### Bot
-![Diagramma package](../images/dettaglio_bot.png)
+![Diagramma package](../images/dettaglio_bot.png){: .center-image width="300"}
 Per la creazione dei bot viene utilizzato il pattern **Factory Method** attraverso `BotFactory`, che permette di istanziare diverse tipologie di bot in base a una stringa di configurazione:
 
 ```scala
@@ -59,7 +59,7 @@ Il pattern **Strategy** è implementato per le diverse strategie di gioco dei bo
 Il Controller implementa il pattern **Facade** per orchestrare la complessità del sistema, mantenendo una separazione pulita tra coordinamento e logica di business.
 ### GameController - State Management
 
-![Diagramma package](../images/Controller_dettaglio.png)
+![Diagramma package](../images/Controller_dettaglio.png){: .center-image width="300"}
 `GameController` gestisce lo stato corrente e le statistiche attraverso:
 - **Encapsulation**: Stato privato con accesso controllato
 - **Command Processing**: Validazione e esecuzione comandi tramite Engine
@@ -160,7 +160,7 @@ Caratteristiche principali:
 - **Event Subscription**: Si registra per ricevere eventi esterni (bot) senza coupling diretto
 
 ### Gui
-![Diagramma package](../images/gui_dettaglio.png)
+![Diagramma package](../images/gui_dettaglio.png){: .center-image width="300"}
 L'interfaccia grafica è costruita con ScalaFX (wrapper Scala per JavaFX), sfruttando il paradigma dichiarativo e la type-safety di Scala.
 #### Card Rendering System
 Il rendering delle carte utilizza un sistema ibrido immagini/fallback:
@@ -206,7 +206,7 @@ private def showOverlay(next: PlayerId): Unit = {
 }
 ```
 ### CLI
-![Diagramma package](../images/Cli_dettaglio.png)
+![Diagramma package](../images/Cli_dettaglio.png){: .center-image width="300"}
 
 L'interfaccia CLI implementa un Read-Eval-Print Loop (REPL) classico, offrendo un'alternativa testuale alla GUI:
 ```scala
