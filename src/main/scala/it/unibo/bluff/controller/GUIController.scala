@@ -31,6 +31,7 @@ object GUIController:
   private var vsBot: Boolean = false
 
   // --- Wiring BotManager (una sola volta) ---
+  // Il bot esegue comandi tramite il controller (che aggiorna stato + stats)
   BotManager.executeCommand = cmd =>
     game.handleCommand(cmd).map { evs =>
       val st2 = game.currentState.getOrElse(
@@ -38,7 +39,9 @@ object GUIController:
       )
       (st2, evs)
     }
-  BotManager.onStateUpdate = s => { game.setGameState(s); game.currentState.foreach(stateRef.set) }
+
+  // Sync dello stato proveniente da servizi esterni SENZA resettare le stats
+  BotManager.onStateUpdate = s => { game.setCurrentState(s); game.currentState.foreach(stateRef.set) }
   // NOTA: BotManager.onEvents verrà impostato dalla View tramite subscribeToExternalEvents
 
   // ---------------- Timer & Bot ----------------
@@ -69,7 +72,7 @@ object GUIController:
         stateRef   = stateRef,
         bot        = bot,
         pollMillis = 250L,
-        onNewState = s => { game.setGameState(s); game.currentState.foreach(stateRef.set) },
+        onNewState = s => { game.setCurrentState(s); game.currentState.foreach(stateRef.set) },
         onGameEnded = () => roundMgr.checkRoundEnd()
       )
       botRunner = Some(runner)
@@ -87,6 +90,9 @@ object GUIController:
     mainStage = Some(stage)
 
     val stWithClocks = roundMgr.startRound()
+    // inizializza stato + stats SOLO qui
+    game.setInitialState(stWithClocks)
+
     startTimer(200L)
     startBotIfNeeded(stWithClocks)
 
@@ -97,7 +103,7 @@ object GUIController:
           maxPerTurnMs = 60_000L,
           dispatch = dispatch,
           renderEvent = game.renderEvent,
-          // La View ci dà un punto d'aggancio: colleghiamo gli eventi esterni (es. bot)
+          // La View espone un "gancio": colleghiamo gli eventi esterni (es. bot)
           subscribeToExternalEvents = cb => { BotManager.onEvents = cb },
           onGameEnded = _ => roundMgr.checkRoundEnd(),
           onExitToMenu = () => {

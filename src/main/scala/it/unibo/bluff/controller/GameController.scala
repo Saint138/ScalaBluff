@@ -16,17 +16,20 @@ final class GameController:
   def currentState: Option[GameState] = state
   def currentMatchStats: Option[MatchStats] = stats
 
-  /** Sostituisce lo stato corrente e resetta le statistiche di round. */
-  def setGameState(st: GameState): Unit =
+  /** Inizializza lo stato a inizio round e resetta le stats. */
+  def setInitialState(st: GameState): Unit =
     state = Some(st)
     stats = Some(MatchStats.empty(st.players))
+
+  /** Aggiorna lo stato corrente senza toccare le stats (sync esterni, es. bot runner). */
+  def setCurrentState(st: GameState): Unit =
+    state = Some(st)
 
   /** Applica un comando al motore aggiornando stato e statistiche. */
   def handleCommand(cmd: GameCommand): Either[String, List[GameEvent]] =
     state match
       case None => Left("Nessuna partita in corso")
       case Some(st) =>
-        val res = Engine.step(st, cmd)
         val prev = st
         Engine.step(st, cmd).map { case (st2, evs) =>
           state = Some(st2)
@@ -56,5 +59,3 @@ final class GameController:
     case Engine.GameEvent.GameEnded(w) =>
       List(s"🏆 Vince ${st.nameOf(w)}!")
     case _ => Nil
-
-

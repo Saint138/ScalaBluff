@@ -40,7 +40,7 @@ class RoundManager(
     roundHandled = false
     val (stDealt, _, _) = GameSetup.fairInitialDeal(playerNames.size, playerNames)
     val stWithClocks    = GameClocks.withClocks(stDealt, 60_000L)
-    game.setGameState(stWithClocks)
+    game.setInitialState(stWithClocks)
     game.currentState.foreach(stateRef.set)
     stWithClocks
 
