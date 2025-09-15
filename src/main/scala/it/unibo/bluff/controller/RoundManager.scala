@@ -8,9 +8,6 @@ import it.unibo.bluff.model.stats.{MatchStats, PlayerStats, StatsUpdater}
 
 import scala.language.postfixOps
 
-/**
- * Responsabile della gestione dei round e delle statistiche cumulative.
- */
 class RoundManager(
                     game: GameController,
                     stateRef: AtomicReference[GameState]
@@ -26,14 +23,12 @@ class RoundManager(
 
   var onTournamentEnd: (GameState, MatchStats) => Unit = (_, _) => ()
 
-  /** Configura un nuovo torneo. */
   def initTournament(names: Vector[String], rounds: Int): Unit =
     playerNames = names
     tournamentRounds = rounds.max(1)
     currentRound = 1
     cumulativeStats = MatchStats.empty(names.indices.map(PlayerId.apply))
 
-  /** Avvia un nuovo round. */
   def startRound(): GameState =
     roundHandled = false
     val (stDealt, _, _) = GameSetup.fairInitialDeal(playerNames.size, playerNames)
@@ -42,7 +37,6 @@ class RoundManager(
     game.currentState.foreach(stateRef.set)
     stWithClocks
 
-  /** Controlla se il round è concluso e gestisce aggiornamento statistiche. */
   def checkRoundEnd(): Unit =
     if roundHandled then return
     game.currentState.foreach { st =>
@@ -62,7 +56,6 @@ class RoundManager(
       }
     }
 
-  /** Genera una classifica leggibile. */
   def prettyCumulative(gs: GameState): String =
     val items = gs.players.map(pid => pid -> cumulativeStats.perPlayer.getOrElse(pid, PlayerStats.empty))
     val sorted = items.sortBy { case (_, s) =>

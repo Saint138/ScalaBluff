@@ -6,6 +6,7 @@ import it.unibo.bluff.model.cards.Rank
 import it.unibo.bluff.model.*
 import scala.io.StdIn
 
+/** View della CLI - gestisce solo input/output, delega tutto ai controller */
 class CLIPrinter:
   def printWelcome(): Unit =
     println("=== ScalaBluff CLI ===")
@@ -100,7 +101,7 @@ class CLIPrinter:
     (0 until players).map { i =>
       print(s"Inserisci il nome per il giocatore ${i + 1}: ")
       val name = StdIn.readLine().trim
-      if name.isEmpty then s"Player${i + 1}" else name
+      if name.isEmpty then s"Player${i+1}" else name
     }.toVector
 
   def promptBotType(): String =

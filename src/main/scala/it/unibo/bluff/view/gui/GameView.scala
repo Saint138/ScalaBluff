@@ -21,11 +21,6 @@ import scala.collection.mutable
 
 object GameView {
 
-  /** La View non chiama Engine.step: riceve un dispatch dal Controller.
-    * La View non conosce più GameController né BotManager:
-    * - renderEvent è una funzione passata dal Controller
-    * - subscribeToExternalEvents permette al Controller di inoltrare eventi esterni (es. bot)
-    */
   def apply(
     stateRef: AtomicReference[GameState],
     maxPerTurnMs: Long = 60_000L,
@@ -40,7 +35,6 @@ object GameView {
 
       private def st: GameState = stateRef.get()
 
-      // ===== Stato selezione carte =====
       private val selected  = mutable.LinkedHashSet.empty[Card]
       private val handNodes = mutable.Buffer.empty[CardNode.CardNode]
 
@@ -52,7 +46,6 @@ object GameView {
         clearSelectionVisual()
         updateButtonsEnabled()
 
-      // ===== Componenti =====
       private val header    = HeaderBar()
       private val handPane  = HandPanel()
       private val logArea   = LogPanel()
@@ -60,18 +53,15 @@ object GameView {
 
       actions.style = "-fx-font-size: 14px;"
 
-      // ===== Overlay privacy tra turni (solo 2 umani) =====
       private var currentViewer: PlayerId = st.turn
       private var overlayShown: Boolean = false
       private var gameEnded: Boolean = false
 
-      // Contenuto centrale reale (layout invariato)
       private val centerContent = new HBox(16,
         new VBox(12, handPane) { padding = Insets(10) },
         new VBox(8, actions, logArea) { padding = Insets(10) }
       ) { padding = Insets(10, 16, 10, 16) }
 
-      // Overlay UI (evidente e centrato)
       private val overlayLabel = new Label {
         style = "-fx-text-fill: white; -fx-font-size: 18px; -fx-font-weight: bold;"
       }
@@ -149,23 +139,20 @@ object GameView {
         right = new HBox { spacing = 8; padding = Insets(8); children = Seq(btnEnd) }
       }
 
-      // StackPane per sovrapporre overlay al contenuto
       center = new StackPane {
         children = Seq(centerContent, overlayPane)
       }
 
-      // ===== Toggle selezione carta =====
       private def toggleSelect(n: CardNode.CardNode): Unit =
         val c = n.card
         if selected.contains(c) then
           selected.remove(c)
           n.markSelected(false)
         else
-          selected.add(c)      // consenti selezione multipla
+          selected.add(c)     
           n.markSelected(true)
         updateButtonsEnabled()
 
-      // ===== Render mano =====
       private def renderHand(): Unit =
         handPane.children.clear()
         handNodes.clear()
@@ -178,7 +165,6 @@ object GameView {
         }
         updateButtonsEnabled()
 
-      // ===== Update UI =====
       private val matchStart = System.currentTimeMillis()
 
       private def updateHeader(): Unit =
@@ -193,18 +179,15 @@ object GameView {
         maybeShowOverlayOnTurnChange()
       }
 
-      // ===== Logger eventi in GameView (anche per bot) =====
       private def appendEvent(ev: Engine.GameEvent): Unit =
         val messages = renderEvent(ev, st)
         messages.foreach(msg => logArea.appendText(msg + "\n"))
         if ev.isInstanceOf[Engine.GameEvent.GameEnded] then
           uiTick.stop()
-          // opzionale: callback per fine partita (se vuoi)
           ev match
             case Engine.GameEvent.GameEnded(w) => onGameEnded(w)
             case _ => ()
 
-      // ===== Actions (via Controller.dispatch) =====
       private def send(cmd: GameCommand): Unit =
         val result = dispatch(cmd)
         result match
@@ -226,12 +209,10 @@ object GameView {
       actions.onCall { send(GameCommand.CallBluff(st.turn)) }
       actions.onClear { resetSelection() }
 
-      // ===== Tick UI =====
       private val uiTick = Timeline(KeyFrame(Duration(200), onFinished = _ => updateHeader()))
       uiTick.cycleCount = Timeline.Indefinite
       uiTick.play()
 
-      // La View si limita a registrare un callback: sarà il Controller ad inoltrare gli eventi esterni
       subscribeToExternalEvents { evs =>
         Platform.runLater {
           evs.foreach(appendEvent)

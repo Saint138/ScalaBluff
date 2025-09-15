@@ -3,10 +3,8 @@ package it.unibo.bluff.model.core.state
 import it.unibo.bluff.model.*
 import it.unibo.bluff.model.cards.{Card, Dealing, ListDeck, Rank}
 
-/** Dichiarazione effettuata: rango dichiarato e carte coperte giocate */
 final case class Declaration(player: PlayerId, declared: Rank, hiddenCards: List[Card])
 
-/** Pila centrale delle carte giocate */
 final case class CenterPile(stacks: List[List[Card]]):
   def allCards: List[Card] = stacks.flatten
   def push(cs: List[Card]): CenterPile = CenterPile(cs :: stacks)
@@ -14,7 +12,6 @@ final case class CenterPile(stacks: List[List[Card]]):
 object CenterPile:
   val empty = CenterPile(Nil)
 
-/** Stato principale del gioco */
 final case class GameState(
   players: Vector[PlayerId],
   hands: Map[PlayerId, Hand],
@@ -26,12 +23,10 @@ final case class GameState(
   finished: Boolean,
   playersNames: Map[PlayerId, String],
   fixedDeclaredRank: Option[Rank],
-  /** Remaining time per player in milliseconds. Managed externally by a timer and used by game logic when timeout occurs. */
   clocks: Map[PlayerId, Long]
 ):
   def nameOf(player: PlayerId): String = playersNames(player)
   def nextPlayer(using order: TurnOrder): PlayerId = order.next(players, turn)
-  //card distribution 
   def applyInitialDistribution: GameState =
     if hands.nonEmpty || deck.isEmpty then this
     else
@@ -41,7 +36,6 @@ final case class GameState(
         case ListDeck(cs) => cs
       this.copy(hands = distributed, deck = remainingCards)
 
-  // Clock operations moved to GameClocks helper to keep GameState focused on data
 
 object GameState:
   def initial(players: Int,playerNames: Vector[String], shuffled: List[Card]): GameState =
