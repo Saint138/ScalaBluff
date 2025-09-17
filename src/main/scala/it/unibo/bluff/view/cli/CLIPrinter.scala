@@ -64,6 +64,8 @@ class CLIPrinter:
         println(s"🏆 Vince ${st.nameOf(winner)}!")
       case GameEvent.TimerExpired(player) =>
         println(s"Event: timeout di ${st.nameOf(player)}")
+      case GameEvent.QuartetCleared(player, rank, count) =>
+      println(s"Event: ♻️ ${st.nameOf(player)} elimina automaticamente $count carte ($rank)")
     }
 
   def printStatus(st: GameState): Unit =
