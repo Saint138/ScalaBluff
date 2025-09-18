@@ -11,12 +11,12 @@ layout: default
 Il mio contributo al progetto ScalaBluff si è concentrato sulla realizzazione del core engine e dei sistemi di supporto fondamentali per il funzionamento del gioco. Le aree principali di sviluppo includono:
 
 | Area | Componenti Sviluppati | 
-|------|----------------------|-------------------|
+|------|----------------------|
 |  **Core Engine**  |  `Engine`, `GameCommand`, `GameEvent`, `GameEngine`  | 
 |  **Validazione**  |  Sistema di controlli turni e proprietà carte  |
 |  **Statistiche**  |  `PlayerStats`, `MatchStats`, `StatsUpdater`  | 
 |  **Tornei**  |  `RoundManager`, aggregazione multi-round | 
-|  **Testing**  |  Suite completa per Engine | Property-based Testing  |
+|  **Testing**  |  Suite completa per Engine | 
 |  **GUI**  |  Card rendering, Privacy overlay, Exit handling  |  
 ---
 
