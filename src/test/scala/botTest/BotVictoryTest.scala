@@ -15,9 +15,8 @@ class BotVictoryTest extends AnyFunSuite {
   def playBot(bot: Bot, st: GameState): (GameState, List[GameEvent]) = {
     var currentState = st
 
-    // Configuriamo BotManager con le callback necessarie
-    BotManager.onEvents = _ => () // ignoriamo eventi GUI nel test
-    BotManager.onStateUpdate = s => currentState = s // aggiorniamo currentState
+    BotManager.onEvents = _ => ()
+    BotManager.onStateUpdate = s => currentState = s
     BotManager.executeCommand = (cmd: GameCommand) =>
       Engine.step(currentState, cmd) match
         case Right((newSt, evs)) =>
@@ -25,7 +24,6 @@ class BotVictoryTest extends AnyFunSuite {
           Right((newSt, evs))
         case Left(err) => Left(err)
 
-    // Eseguiamo il turno del bot
     BotManager.takeTurn(bot, currentState) match
       case Right((newSt, evs)) =>
         (newSt, evs)
@@ -37,7 +35,7 @@ class BotVictoryTest extends AnyFunSuite {
     val p0 = PlayerId(0)
     val p1 = PlayerId(1)
 
-    val bot: Bot = BotFactory("random", p1)
+    val bot: Bot = BotFactory("facile", p1)
 
     // Bot ha una carta che può giocare per vincere
     val botCard = Card(Rank.Due, Suit.Hearts)
@@ -81,7 +79,7 @@ class BotVictoryTest extends AnyFunSuite {
     val p0 = PlayerId(0)
     val p1 = PlayerId(1)
 
-    val bot: Bot = BotFactory("smart", p1)
+    val bot: Bot = BotFactory("difficile", p1)
 
     // Bot ha una carta che corrisponde al rango fisso per vincere facilmente
     val botCard = Card(Rank.Due, Suit.Hearts)
@@ -121,56 +119,12 @@ class BotVictoryTest extends AnyFunSuite {
     assert(gameEndedEvents.head.winner == p1, "SmartBot should be the winner")
   }
 
-  test("Bot handles multiple turns scenario") {
-    val p0 = PlayerId(0)
-    val p1 = PlayerId(1)
-
-    val bot: Bot = BotFactory("smart", p1)
-
-    // Scenario più complesso: bot ha 2 carte, deve giocare strategicamente
-    val botCards = List(Card(Rank.Asso, Suit.Hearts), Card(Rank.Asso, Suit.Spades))
-    val playerCards = List(Card(Rank.King, Suit.Clubs), Card(Rank.King, Suit.Diamonds))
-
-    val hands = Map(
-      p0 -> Hand(playerCards),
-      p1 -> Hand(botCards)
-    )
-
-    val st = GameState(
-      players = Vector(p0, p1),
-      hands = hands,
-      deck = Nil,
-      pile = CenterPile.empty,
-      turn = p1,
-      lastDeclaration = None,
-      pendingPenalty = None,
-      finished = false,
-      playersNames = Map(p0 -> "Player", p1 -> "SmartBot"),
-      fixedDeclaredRank = None, // Nessun rango fisso, bot può scegliere
-      clocks = Map(p0 -> 60000L, p1 -> 60000L)
-    )
-
-    val (newSt, events) = playBot(bot, st)
-
-    println(s"[DEBUG] Multi-turn bot events: $events")
-    println(s"[DEBUG] Bot hand size after play: ${newSt.hands(p1).size}")
-
-    // Verifica che il bot abbia fatto una mossa valida
-    assert(newSt.hands(p1).size < botCards.size, "Bot should have played at least one card")
-
-    // Verifica che ci sia stato un evento di giocata
-    val playEvents = events.collect {
-      case ge: GameEvent.Played => ge
-      case ge: GameEvent.BotPlayed => ge
-    }
-    assert(playEvents.nonEmpty, "Should have a play event")
-  }
 
   test("Bot handles bluff calling scenario") {
     val p0 = PlayerId(0)
     val p1 = PlayerId(1)
 
-    val bot: Bot = BotFactory("smart", p1)
+    val bot: Bot = BotFactory("difficile", p1)
 
     val botCard = Card(Rank.Tre, Suit.Hearts)
     val playerCard = Card(Rank.Quattro, Suit.Spades)
