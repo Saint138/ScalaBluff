@@ -21,7 +21,7 @@ class CLIPrinter:
     val extra = if gameActive then " | play <n1> <rank1> [<n2> <rank2> ...] | call | status" else ""
     println(base + extra)
     if !gameActive then
-      println("Tipi di bot disponibili: random, smart")
+      println("Tipi di bot disponibili: facile, medio, difficile")
 
   def printGameStarted(numPlayers: Int, deckSize: Int, firstPlayer: String): Unit =
     println(s"Nuova partita con $numPlayers giocatori.")

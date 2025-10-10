@@ -1,22 +1,29 @@
 package it.unibo.bluff.view.cli
 
-import it.unibo.bluff.controller.{GameController, RoundManager}
+import it.unibo.bluff.controller.GameController
 import it.unibo.bluff.model.bot.{BotFactory, BotManager, BotRunner}
-import it.unibo.bluff.model.core.engine.Engine.GameCommand
+import it.unibo.bluff.model.core.engine.Engine.{GameCommand, GameEvent}
 import it.unibo.bluff.model.core.engine.Engine.GameCommand.Play
 import it.unibo.bluff.model.core.setup.GameSetup
 import it.unibo.bluff.model.*
 import it.unibo.bluff.model.cards.{Card, Rank}
+import it.unibo.bluff.model.core.state.GameState
+
 import java.util.concurrent.atomic.AtomicReference
 
 
 class CLICommandHandler:
   private val view = new CLIPrinter()
   private val gameController = new GameController()
-  private val stateRef = new AtomicReference[it.unibo.bluff.model.core.state.GameState]()
+  private val stateRef = new AtomicReference[GameState]()
   private var botRunner: Option[BotRunner] = None
   private var running = false
+  private var gameEnded = false
 
+  private val BotPollIntervalMillis: Long = 250L
+  private val TokenPairSize: Int = 2
+  private val MinimumQuantity: Int = 0
+  private val BotName: String = "Bot"
 
   BotManager.executeCommand = cmd =>
     gameController.handleCommand(cmd).map { evs =>
@@ -31,6 +38,24 @@ class CLICommandHandler:
     gameController.currentState.foreach(stateRef.set)
   }
 
+  BotManager.onEvents = evs => {
+    gameController.currentState.foreach { s =>
+      view.printEvents(evs, s)
+      if evs.exists {
+        case GameEvent.GameEnded(_) => true
+        case _ => false
+      } then
+        gameEnded = true
+        stopBot()
+      val humanId = s.players.find(pid => !s.nameOf(pid).equalsIgnoreCase(BotName))
+      humanId.foreach { hId =>
+        if s.turn == hId then
+          view.printStatus(s)
+          view.printHand(s)
+      }
+    }
+  }
+
   def repl(): Unit =
     running = true
     view.printWelcome()
@@ -40,15 +65,7 @@ class CLICommandHandler:
       val input = view.readInput()
       handleCommand(input)
 
-      gameController.botTurn() match
-        case Right(events) if events.nonEmpty =>
-          gameController.currentState.foreach { st =>
-            view.printEvents(events, st)
-            view.printStatus(st)
-            view.printHand(st)
-          }
-        case Left(err) => view.printError(s"Errore bot: $err")
-        case _ => ()
+
 
   private def handleCommand(input: String): Unit =
     input.split("\\s+").toList match
@@ -56,7 +73,7 @@ class CLICommandHandler:
       case "quit" :: _ => quit()
       case "new" :: _ => startNewGame()
       case "bot" :: botType :: _ => startGameVsBot(botType)
-      case "bot" :: Nil => startGameVsBot("random")
+      case "bot" :: Nil => startGameVsBot()
       case "help" :: _ => view.printHelp(gameController.currentState.isDefined)
       case extra => handleGameCommand(extra)
 
@@ -72,7 +89,7 @@ class CLICommandHandler:
           case _ => view.printUnknownCommand(tokens.mkString(" "))
       case None => view.printNoGameActive()
 
-  private def handlePlay(state: it.unibo.bluff.model.core.state.GameState, tokens: List[String]): Unit =
+  private def handlePlay(state: GameState, tokens: List[String]): Unit =
     parsePairs(tokens) match
       case Left(err) => view.printError(err)
       case Right(Nil) => view.printError("Devi specificare almeno una coppia <quantità rango>, es: play 2 asso")
@@ -84,15 +101,28 @@ class CLICommandHandler:
 
   private def executeGameCommand(cmd: GameCommand): Unit =
     gameController.handleCommand(cmd) match
-      case Left(err) => view.printError(err)
+      case Left(err) =>
+        println(s"[executeGameCommand] Errore: $err")
+        view.printError(err)
       case Right(events) =>
         gameController.currentState.foreach { st =>
+          stateRef.set(st)
           view.printEvents(events, st)
-          view.printStatus(st)
-          view.printHand(st)
+          if events.exists {
+            case GameEvent.GameEnded(_) => true
+            case _ => false
+          } then
+            gameEnded = true
+            stopBot()
+          else
+            view.printStatus(st)
+            view.printHand(st)
         }
 
+
+
   private def startNewGame(): Unit =
+    gameEnded = false
     val numPlayers = view.promptPlayersCount()
     val names = view.promptPlayersName(numPlayers)
     
@@ -105,8 +135,12 @@ class CLICommandHandler:
     view.printStatus(st)
     view.printHand(st)
 
-  private def startGameVsBot(botType: String = "random"): Unit =
-    val selectedBotType = if botType == "smart" then "smart" else "random"
+  private def startGameVsBot(botType: String = "facile"): Unit =
+    gameEnded = false
+    val selectedBotType = botType.toLowerCase match
+      case "medio" => "medio"
+      case "difficile" => "difficile"
+      case _ => "facile"
     val playerName = view.promptPlayersName(1).head
     val names = Vector(playerName, "Bot")
     
@@ -121,19 +155,22 @@ class CLICommandHandler:
     view.printStatus(st)
     view.printHand(st)
 
-  private def startBot(st: it.unibo.bluff.model.core.state.GameState, botKind: String): Unit =
+  private def startBot(st: GameState, botKind: String): Unit =
     stopBot()
-    val botId = st.players.find(pid => st.nameOf(pid).equalsIgnoreCase("Bot")).getOrElse(st.players.last)
+    val botId = st.players.find(pid => st.nameOf(pid).equalsIgnoreCase(BotName)).getOrElse(st.players.last)
     val bot = BotFactory(botKind, botId)
     val runner = new BotRunner(
       stateRef = stateRef,
       bot = bot,
-      pollMillis = 250L,
+      pollMillis = BotPollIntervalMillis,
       onNewState = s => {
         gameController.setCurrentState(s)
         gameController.currentState.foreach(stateRef.set)
       },
-      onGameEnded = () => ()
+      onGameEnded = () => {
+        gameEnded = true
+        stopBot()
+      }
     )
     botRunner = Some(runner)
     runner.start()
@@ -147,7 +184,7 @@ class CLICommandHandler:
     stopBot()
     view.printGoodbye()
 
-  private def pickCardsByNeed(state: it.unibo.bluff.model.core.state.GameState, pid: PlayerId, pairs: List[(Int, Rank)]): Either[String, List[Card]] =
+  private def pickCardsByNeed(state: GameState, pid: PlayerId, pairs: List[(Int, Rank)]): Either[String, List[Card]] =
     val hand = state.hands.getOrElse(pid, Hand.empty).cards
     val groupedHand = hand.groupBy(_.rank)
     val lacking = pairs.collect {
@@ -162,16 +199,16 @@ class CLICommandHandler:
   private def parsePairs(tokens: List[String]): Either[String, List[(Int, Rank)]] =
     tokens match
       case Nil => Right(Nil)
-      case _ if tokens.length % 2 != 0 =>
+      case _ if tokens.length % TokenPairSize != 0 =>
         Left("Sintassi errata. Usa: play <n1> <rank1> [<n2> <rank2> ...]")
       case _ =>
-        tokens.grouped(2).toList.map { g =>
-          if g.size == 2 then
-            val qStr = g(0)
+        tokens.grouped(TokenPairSize).toList.map { g =>
+          if g.size == TokenPairSize then
+            val qStr = g.head
             val rankStr = g(1)
             qStr.toIntOption match
               case None => Left(s"Quantità non valida: $qStr")
-              case Some(q) if q <= 0 => Left(s"Quantità non valida: $qStr (deve essere > 0)")
+              case Some(q) if q <= MinimumQuantity => Left(s"Quantità non valida: $qStr (deve essere > 0)")
               case Some(q) => view.parseRank(rankStr).map(rk => (q, rk))
           else Left(s"Errore interno nel parsing dei token: ${g.mkString(" ")}")
         }.foldRight[Either[String, List[(Int, Rank)]]](Right(Nil)) {

@@ -7,7 +7,7 @@ import it.unibo.bluff.model.core.engine.Engine
 import it.unibo.bluff.model.core.engine.Engine.*
 import it.unibo.bluff.model.core.engine.Engine.GameEvent.*
 import it.unibo.bluff.model.core.state.*
-import it.unibo.bluff.model.bot.{BotFactory, Bot, SmartBot, RandomBot}
+import it.unibo.bluff.model.bot.{BotFactory, Bot}
 import org.scalatest.funsuite.AnyFunSuite
 
 class BotBluffTurnTest extends AnyFunSuite {
@@ -23,7 +23,7 @@ class BotBluffTurnTest extends AnyFunSuite {
 
     given TurnOrder = TurnOrder.given_TurnOrder
 
-    val bot: Bot = BotFactory("random", p1)
+    val bot: Bot = BotFactory("facile", p1)
 
     val hands = Map(
       p0 -> Hand(List(Card(Rank.Tre, Suit.Hearts), Card(Rank.Due, Suit.Spades))),
@@ -64,7 +64,7 @@ class BotBluffTurnTest extends AnyFunSuite {
 
     given TurnOrder = TurnOrder.given_TurnOrder
 
-    val bot: Bot = BotFactory("smart", p1)
+    val bot: Bot = BotFactory("difficile", p1)
 
     val hands = Map(
       p0 -> Hand(List(Card(Rank.Asso, Suit.Hearts), Card(Rank.Due, Suit.Spades))),
