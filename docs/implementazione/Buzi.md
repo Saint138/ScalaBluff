@@ -292,8 +292,7 @@ object Hand:
 	val empty: Hand = Hand(Nil)
 ```
 
-Spiegazione: `PlayerId` è un tipo opaco su `Int` per sicurezza di tipo; `Hand` è una semplice lista di `Card` con utilità per aggiungere/rimuovere carte. `remove` ritorna `Left` se la mano non contiene tutte le carte richieste.
-Spiegazione (più dettagliata ma breve):
+Spiegazione:
 
 - `PlayerId` è definito come un tipo opaco `Int`. Questo evita confusioni con altri interi nel codice (migliora safety) pur rimanendo leggero a runtime.
 - A sua volta al interno del file è presente la classe `Hand` che contiene la lista di `Card` del giocatore e fornisce helper immutabili:
